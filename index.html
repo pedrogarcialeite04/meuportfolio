@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Portfolio front-end — interfaces performáticas, motion e design systems." />
+  <title>Pedro — Front-end &amp; UI Engineering</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@200..900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <canvas id="three-bg" aria-hidden="true"></canvas>
+
+  <header class="header">
+    <a class="logo" href="#hero"></a>
+    <button type="button" id="menu-toggle" class="menu-toggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu-overlay">
+      <span class="burger" aria-hidden="true">
+        <span class="burger-line"></span>
+        <span class="burger-line"></span>
+        <span class="burger-line"></span>
+      </span>
+    </button>
+  </header>
+
+  <aside id="menu-overlay" class="menu-root" aria-hidden="true">
+    <div class="menu-shell" id="menu-panel">
+      <header class="menu-shell__top">
+        <div class="menu-shell__actions">
+          <button type="button" class="menu-shell__close" id="menu-overlay-close" aria-label="Fechar menu">
+            <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="close-stroke close-stroke--a" d="M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+              <path class="close-stroke close-stroke--b" d="M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="menu-shell__body">
+        <div class="menu-shell__mosaic menu-grid-parallax" aria-hidden="true">
+          <figure class="menu-shell__cell menu-shell__cell--1">
+            <img src="./assets/images/menu/imgperf.jpeg" alt="" decoding="async" />
+          </figure>
+          <figure class="menu-shell__cell menu-shell__cell--2">
+            <img src="./assets/images/menu/imgpc2.jpeg" alt="" decoding="async" />
+          </figure>
+          <figure class="menu-shell__cell menu-shell__cell--3">
+            <img src="./assets/images/menu/imgpc.jpeg" alt="" decoding="async" />
+          </figure>
+          <figure class="menu-shell__cell menu-shell__cell--4">
+            <img
+              src="./assets/images/menu/WhatsApp%20Image%202026-04-14%20at%2013.54.48.jpeg"
+              alt=""
+              decoding="async"
+            />
+          </figure>
+        </div>
+
+        <div class="menu-shell__pane">
+          <div class="menu-shell__topo" aria-hidden="true"></div>
+          <nav class="menu-shell__nav" aria-label="Principal">
+            <ul class="menu-shell__links">
+              <li>
+                <a class="menu-main-link" href="#hero" data-menu-close>
+                  <span class="menu-main-link__text">INICIO</span>
+                </a>
+              </li>
+              <li>
+                <a class="menu-main-link" href="#sobre" data-menu-close>
+                  <span class="menu-main-link__text">SOBRE</span>
+                </a>
+              </li>
+              <li>
+                <a class="menu-main-link" href="#stack" data-menu-close>
+                  <span class="menu-main-link__text">STACK</span>
+                </a>
+              </li>
+              <li>
+                <a class="menu-main-link" href="#trajetoria" data-menu-close>
+                  <span class="menu-main-link__text">TRAJETÓRIA</span>
+                </a>
+              </li>
+              <li>
+                <a class="menu-main-link" href="#projetos" data-menu-close>
+                  <span class="menu-main-link__text">PROJETOS</span>
+                </a>
+              </li>
+              <li>
+                <a class="menu-main-link" href="#contato" data-menu-close>
+                  <span class="menu-main-link__text">CONTATO</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+          <ul class="menu-shell__socials" aria-label="Redes sociais">
+            <li><a href="https://www.linkedin.com/in/pedrogarcia-tech" target="_blank" rel="noreferrer">LinkedIn</a></li>
+            <li><a href="https://www.tiktok.com/@pedrogarciadev?_r=1&_t=ZS-92w2ThpSe9J" target="_blank" rel="noreferrer">TikTok</a></li>
+            <li><a href="https://www.instagram.com/pedrocadev?igsh=MTQ5Z3k2a2IwMjB3Mg%3D%3D&utm_source=qr" target="_blank" rel="noreferrer">Instagram</a></li>
+            <li><a href="https://github.com/pedrogarcialeite04" target="_blank" rel="noreferrer">GitHub</a></li>
+          </ul>
+
+          <div class="menu-shell__badge">
+            <svg class="menu-shell__badge-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path
+                d="M24 6c-2 4-6 7-10 8v4c0 6 4 11 10 12 6-1 10-6 10-12v-4c-4-1-8-4-10-8Z"
+                stroke="currentColor"
+                stroke-width="1.2"
+                fill="none"
+              />
+              <path
+                d="M8 20c3-2 6-3 8-3M40 20c-3-2-6-3-8-3M10 32c2 2 5 3 8 3M38 32c-2 2-5 3-8 3"
+                stroke="currentColor"
+                stroke-width="0.9"
+                opacity="0.5"
+              />
+            </svg>
+            <p class="menu-shell__badge-text">FRONT END <span class="menu-shell__badge-sep">·</span> UI</p>
+            <p class="menu-shell__badge-sub">SINCE 2025</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main id="main-content">
+    <section id="hero" class="hero">
+      <div class="hero-stage" id="hero-stage" aria-label="Destaque principal">
+        <p class="hero-wordmark" aria-hidden="true">PEDROCADEV</p>
+        <svg class="hero-defs" width="0" height="0" aria-hidden="true">
+          <defs>
+            <filter id="hero-blob-goo" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+              <feColorMatrix
+                in="blur"
+                mode="matrix"
+                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+                result="goo"
+              />
+              <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+            </filter>
+            <mask id="hero-blob-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="4096" height="4096">
+              <g filter="url(#hero-blob-goo)" fill="white">
+                <g id="hero-mask-blobs"></g>
+              </g>
+            </mask>
+          </defs>
+        </svg>
+        <div class="hero-base-layer" id="hero-base" aria-hidden="true"></div>
+        <div class="hero-reveal-layer" id="hero-reveal" aria-hidden="true"></div>
+      </div>
+      <aside class="hero-profile-card" id="hero-profile-card" aria-label="Informações do perfil">
+        <p class="hero-profile-kicker">Portfolio</p>
+        <h1 class="hero-profile-name">Pedro</h1>
+        <p class="hero-profile-role">Programador front end</p>
+        <p class="hero-profile-age">Idade: 19 anos</p>
+        <ul class="hero-profile-socials" aria-label="Redes sociais">
+          <li><a href="www.linkedin.com/in/pedrogarcia-tech" target="_blank" rel="noreferrer">LinkedIn</a></li>
+          <li><a href="https://www.tiktok.com/@pedrogarciadev?_r=1&_t=ZS-92w2ThpSe9J" target="_blank" rel="noreferrer">TikTok</a></li>
+          <li><a href="https://www.instagram.com/pedrocadev?igsh=MTQ5Z3k2a2IwMjB3Mg%3D%3D&utm_source=qr" target="_blank" rel="noreferrer">Instagram</a></li>
+          <li><a href="https://github.com/pedrogarcialeite04" target="_blank" rel="noreferrer">GitHub</a></li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="career perfil-strip" id="sobre" aria-labelledby="sobre-heading">
+      <div class="podiums">
+        <h2 class="podiums-title" aria-hidden="true">
+          <span>FRONT </span>
+          <span>END</span>
+        </h2>
+      </div>
+      <div class="career-body perfil-body">
+        <div class="career-media perfil-intro">
+          <p class="folio-eyebrow" id="sobre-heading">Sobre</p>
+          <h4><span class="hl-wrap"><span class="animate-highlight"></span><span class="hl-label">Interfaces que respiram</span></span></h4>
+          <h5><span class="hl-wrap"><span class="animate-highlight"></span><span class="hl-label">Desde o protótipo ao deploy</span></span></h5>
+        </div>
+        <div class="stats perfil-stats">
+          <article>
+            <small><span class="hl-wrap"><span class="animate-highlight"></span><span class="hl-label">Projetos reais</span></span></small>
+            <strong class="stat-count" data-count="19" data-decimals="0">0</strong>
+          </article>
+          <article>
+            <small><span class="hl-wrap"><span class="animate-highlight"></span><span class="hl-label">Projetos Full Stack</span></span></small>
+            <strong class="stat-count" data-count="10" data-decimals="0">0</strong>
+          </article>
+          <article class="stat-average-row">
+            <small><span class="hl-wrap"><span class="animate-highlight"></span><span class="hl-label">Satisfação do cliente (média)</span></span></small>
+            <strong class="stat-count" data-count="99" data-count-no-plus>0</strong><em class="stat-suffix">/100</em>
+          </article>
+          <article>
+            <small><span class="hl-wrap"><span class="animate-highlight"></span><span class="hl-label">Anos de experiência</span></span></small>
+            <strong class="stat-count" data-count="2" data-decimals="0">0</strong>
+          </article>
+        </div>
+        <div class="perfil-pitch">
+          <p class="perfil-lead">
+            Ajudo marcas e equipas a lançar produtos que <strong>parecem premium e carregam rápido</strong> — da ideia ao deploy, com código limpo, acessível e pronto para escalar.
+          </p>
+          <p class="perfil-lead perfil-lead--accent">
+            Se precisas de alguém que une <strong>visual forte</strong>, <strong>performance medível</strong> e <strong>atenção ao detalhe</strong>, vamos conversar.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="stack" class="section section-stack">
+      <div id="stack-gradient-bars" class="stack-gradient-bars" aria-hidden="true"></div>
+      <div class="stack-pin-inner">
+        <p class="folio-eyebrow">Ferramentas</p>
+        <h2 class="title stack-title" id="stack-title"><span>Stack</span><span>used</span></h2>
+        <p class="lead stack-lead">
+          Uso <strong>JavaScript</strong> e <strong>Node.js</strong> como base no dia a dia e, nos freelances, junto tudo o que você pode ver na lista abaixo — para entregar sites e produtos <strong>rápidos</strong>, com bom aspeto e fáceis de fazer crescer.
+        </p>
+        <div class="marquee marquee--framed" id="partners-marquee">
+          <div class="marquee-track" id="marquee-track"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="trajetoria" class="section dark section-trajetoria" aria-labelledby="trajetoria-title">
+      <div class="section-scroll-rail section-scroll-rail--right" aria-hidden="true">
+        <span class="section-scroll-rail__fill" id="scroll-rail-trajetoria"></span>
+      </div>
+      <p>   </p>
+      <p class="folio-eyebrow"> sobre mim</p>
+      <h2 class="title trajetoria-title" id="trajetoria-title"><span>Minha</span><span>Trajetória</span></h2>
+      <div class="trajetoria-expansion" id="trajetoria-expansion" aria-label="Hero editorial da trajetória">
+        <img
+          class="trajetoria-expansion__bg-image"
+          src="./assets/images/Gemini_Generated_Image_rluay3rluay3rlua-removebg-preview.png"
+          alt=""
+          loading="eager"
+          decoding="async"
+          aria-hidden="true"
+        />
+        <div class="trajetoria-expansion__wash" aria-hidden="true"></div>
+        <div class="trajetoria-expansion__contour" aria-hidden="true"></div>
+
+        <div class="trajetoria-expansion__inner">
+          <article class="trajetoria-single-story">
+            <p class="trajetoria-single-story__kicker">Pedro Garcia</p>
+            <h3 class="trajetoria-single-story__title">My Journey</h3>
+            <p class="trajetoria-single-story__text">
+              Aos 19 anos, transformo linhas de código em soluções digitais. Sou graduando em Ciência da Computação pela UNIRP e atuo como Desenvolvedor Full Stack na Theze Agrícola. Minha jornada na tecnologia começou cedo: estou na mesma empresa há mais de 3 anos, onde cresci de funcionário operacional até me tornar parte do time de tecnologia e TI.
+
+Sou um entusiasta do ecossistema Web e do Front-end, focado em construir aplicações modernas, rápidas e visualmente atraentes. Unindo a base teórica da faculdade com a prática diária do mercado e diversos cursos de especialização, busco constantemente superar desafios técnicos e entregar resultados que agreguem valor real ao usuário.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="projetos" class="section section-projetos dark" aria-labelledby="projetos-heading">
+      <div class="projects-shell">
+        <p class="folio-eyebrow" id="projetos-heading">Projetos selecionados</p>
+        <h2 class="title projetos-title"><span>Meus</span><span>Projetos</span></h2>
+        <p class="lead projetos-lead">
+          Uma curadoria visual no estilo editorial com meus principais trabalhos em <strong>front-end</strong>, <strong>produto digital</strong> e
+          <strong>experiências interativas</strong>, mantendo foco em design, performance e detalhe.
+        </p>
+        <div id="project-cards" class="project-cards" aria-label="Lista de projetos"></div>
+      </div>
+    </section>
+
+    <section id="contato" class="section section-contato-overlay dark" aria-labelledby="contato-heading">
+      <div class="contato-overlay-shell">
+        <p class="folio-eyebrow"></p>
+        <h2 class="title contato-title" id="contato-heading"><span>Seu</span><span>Projeto</span></h2>
+        <p class="lead contato-lead">
+          Se você chegou até aqui, seu projeto merece uma interface que converte, carrega rápido e transmite qualidade em cada detalhe.
+        </p>
+        <div class="contato-cta-row">
+          <a class="contato-mail" href="mailto:contato@pedro.dev">contato@pedro.dev</a>
+          <a class="contato-linkedin" href="https://www.linkedin.com/in/pedrogarcia-tech" target="_blank" rel="noreferrer">LinkedIn profissional</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="helmets section-lab" id="lab" aria-labelledby="lab-title" hidden>
+      <img class="preloader" id="helmets-preloader" src="./assets/images/pre-loader/image-pre-loader-01.webp" alt="" decoding="async" />
+      <div class="section helmets-inner lab-inner">
+        <p class="folio-eyebrow folio-eyebrow--on-dark">Explorações</p>
+        <h2 class="title lab-title" id="lab-title"><span>Lab</span><span>Visual</span></h2>
+        <p class="lead lab-lead">
+          Estudos de <strong>material, luz e densidade</strong> — o mesmo rigor de produção aplicado a brincadeiras visuais que alimentam ideias futuras.
+        </p>
+        <div class="helmet-grid" id="helmet-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="video-modal" id="video-modal" hidden aria-hidden="true">
+    <div class="video-modal__backdrop" data-video-close></div>
+    <div class="video-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="video-modal-title">
+      <button type="button" class="video-modal__close" id="video-modal-close" aria-label="Fechar video">&times;</button>
+      <p class="video-modal__title" id="video-modal-title">Projeto em video</p>
+      <video id="video-modal-player" class="video-modal__player" controls preload="metadata" playsinline>
+        Seu navegador nao suporta reproducao de video.
+      </video>
+    </div>
+  </div>
+
+  <footer class="site-footer" id="rodape" hidden>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="folio-eyebrow folio-eyebrow--footer">Disponível para</p>
+        <p class="footer-headline">Projetos <span class="footer-accent">2026</span></p>
+        <p class="footer-copy">Contratos remotos, squads de produto e consultoria em front-end criativo para marcas que valorizam performance e experiência.</p>
+        <ul class="footer-tags" aria-label="Serviços prestados">
+          <li>Landing Pages</li>
+          <li>Web Apps</li>
+          <li>UI Engineering</li>
+          <li>Consultoria Front-End</li>
+        </ul>
+      </div>
+
+      <div class="footer-cta">
+        <p class="footer-card-label">Contato direto</p>
+        <a class="footer-mail" href="mailto:contato@pedro.dev">contato@pedro.dev</a>
+        <a class="footer-secondary-link" href="https://www.linkedin.com/in/pedrogarcia-tech" target="_blank" rel="noreferrer">LinkedIn profissional</a>
+        <span class="footer-line" aria-hidden="true"></span>
+        <div class="footer-meta-row">
+          <p class="footer-meta">São Paulo · GMT−3</p>
+          <p class="footer-meta">Resposta média: até 24h</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <nav class="footer-nav" aria-label="Links rápidos do rodapé">
+        <a href="#hero">Início</a>
+        <a href="#sobre">Sobre</a>
+        <a href="#projetos">Freelances</a>
+        <a href="#stack">Stack</a>
+      </nav>
+      <p class="footer-legal">© 2026 Pedro Garcia. Construído com foco em design, acessibilidade e performance.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"></script>
+  <script src="./script.js" defer></script>
+</body>
+</html>
