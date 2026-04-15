@@ -1,0 +1,27 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# Dependencies and build caches
+node_modules/
+dist/
+build/
+.cache/
+
+# Local folders not used by this static site entrypoint
+css/
+js/
+
+# Large local videos (not referenced by current page)
+*.mp4
+*.mov
+*.avi
+*.mkv
