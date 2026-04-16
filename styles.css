@@ -41,6 +41,12 @@ html {
   padding: 0;
   overflow-x: hidden;
   scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 body {
