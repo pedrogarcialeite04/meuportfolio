@@ -558,6 +558,7 @@ function setupHeroBlobMask(reduceMotion) {
   let mouseTx = 0;
   let mouseTy = 0;
   let isInside = false;
+  let activePointerId = null;
 
   const cursorG = document.createElementNS(HERO_NS, "g");
   cursorG.setAttribute("id", "hero-cursor-blobs");
@@ -685,6 +686,27 @@ function setupHeroBlobMask(reduceMotion) {
     updatePointerTarget(e.clientX, e.clientY);
   };
 
+  const onPointerDown = (e) => {
+    if (e.pointerType === "mouse") return;
+    activePointerId = e.pointerId;
+    updatePointerTarget(e.clientX, e.clientY);
+  };
+
+  const onPointerMove = (e) => {
+    if (e.pointerType === "mouse") return;
+    if (activePointerId !== null && e.pointerId !== activePointerId) return;
+    updatePointerTarget(e.clientX, e.clientY);
+  };
+
+  const onPointerUp = (e) => {
+    if (e.pointerType === "mouse") return;
+    if (activePointerId !== null && e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    isInside = false;
+    ratioTx = 0;
+    ratioTy = 0;
+  };
+
   const onTouchStart = (e) => {
     const touch = e.touches && e.touches[0];
     if (!touch) return;
@@ -701,6 +723,7 @@ function setupHeroBlobMask(reduceMotion) {
     isInside = false;
     ratioTx = 0;
     ratioTy = 0;
+    activePointerId = null;
   };
 
   let raf = 0;
@@ -715,6 +738,12 @@ function setupHeroBlobMask(reduceMotion) {
     const oy = rRect.top - cRect.top;
     const cw = cRect.width;
     const ch = cRect.height;
+
+    if (!isInside && !mqDesktop.matches) {
+      const driftTime = tMs * 0.00045;
+      ratioTx = Math.sin(driftTime) * 0.18;
+      ratioTy = Math.cos(driftTime * 1.22) * 0.14;
+    }
 
     const rs = ratioSpring.step(ratioTx, ratioTy, dt);
     const baseX = rs.x * parallaxStrength;
@@ -807,10 +836,17 @@ function setupHeroBlobMask(reduceMotion) {
   };
 
   window.addEventListener("mousemove", onMove);
-  stage.addEventListener("touchstart", onTouchStart, { passive: true });
-  stage.addEventListener("touchmove", onTouchMove, { passive: true });
-  stage.addEventListener("touchend", onTouchEnd, { passive: true });
-  stage.addEventListener("touchcancel", onTouchEnd, { passive: true });
+  if (typeof PointerEvent !== "undefined") {
+    stage.addEventListener("pointerdown", onPointerDown, { passive: true });
+    stage.addEventListener("pointermove", onPointerMove, { passive: true });
+    stage.addEventListener("pointerup", onPointerUp, { passive: true });
+    stage.addEventListener("pointercancel", onPointerUp, { passive: true });
+  } else {
+    stage.addEventListener("touchstart", onTouchStart, { passive: true });
+    stage.addEventListener("touchmove", onTouchMove, { passive: true });
+    stage.addEventListener("touchend", onTouchEnd, { passive: true });
+    stage.addEventListener("touchcancel", onTouchEnd, { passive: true });
+  }
   window.addEventListener("resize", onResize);
   if (typeof mqDesktop.addEventListener === "function") {
     mqDesktop.addEventListener("change", onResize);
@@ -823,10 +859,17 @@ function setupHeroBlobMask(reduceMotion) {
   return () => {
     cancelAnimationFrame(raf);
     window.removeEventListener("mousemove", onMove);
-    stage.removeEventListener("touchstart", onTouchStart);
-    stage.removeEventListener("touchmove", onTouchMove);
-    stage.removeEventListener("touchend", onTouchEnd);
-    stage.removeEventListener("touchcancel", onTouchEnd);
+    if (typeof PointerEvent !== "undefined") {
+      stage.removeEventListener("pointerdown", onPointerDown);
+      stage.removeEventListener("pointermove", onPointerMove);
+      stage.removeEventListener("pointerup", onPointerUp);
+      stage.removeEventListener("pointercancel", onPointerUp);
+    } else {
+      stage.removeEventListener("touchstart", onTouchStart);
+      stage.removeEventListener("touchmove", onTouchMove);
+      stage.removeEventListener("touchend", onTouchEnd);
+      stage.removeEventListener("touchcancel", onTouchEnd);
+    }
     window.removeEventListener("resize", onResize);
     if (typeof mqDesktop.removeEventListener === "function") {
       mqDesktop.removeEventListener("change", onResize);
