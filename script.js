@@ -610,7 +610,6 @@ function setupHeroBlobMask(reduceMotion) {
   let mouseTy = 0;
   let isInside = false;
   let activePointerId = null;
-  let interactionBoost = 0;
 
   const useSvgMaskDom = maskMode === "svg";
   const cursorG = useSvgMaskDom ? document.createElementNS(HERO_NS, "g") : null;
@@ -744,14 +743,12 @@ function setupHeroBlobMask(reduceMotion) {
   const onPointerDown = (e) => {
     if (e.pointerType === "mouse") return;
     activePointerId = e.pointerId;
-    interactionBoost = 1;
     updatePointerTarget(e.clientX, e.clientY);
   };
 
   const onPointerMove = (e) => {
     if (e.pointerType === "mouse") return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
-    interactionBoost = Math.max(interactionBoost, 0.82);
     updatePointerTarget(e.clientX, e.clientY);
   };
 
@@ -767,14 +764,12 @@ function setupHeroBlobMask(reduceMotion) {
   const onTouchStart = (e) => {
     const touch = e.touches && e.touches[0];
     if (!touch) return;
-    interactionBoost = 1;
     updatePointerTarget(touch.clientX, touch.clientY);
   };
 
   const onTouchMove = (e) => {
     const touch = e.touches && e.touches[0];
     if (!touch) return;
-    interactionBoost = Math.max(interactionBoost, 0.82);
     updatePointerTarget(touch.clientX, touch.clientY);
   };
 
@@ -826,10 +821,6 @@ function setupHeroBlobMask(reduceMotion) {
     const toLocal = (mx, my) => ({ x: mx - ox, y: my - oy });
 
     const shouldShowCursorBlob = isInside || !mqDesktop.matches;
-    interactionBoost = Math.max(0, interactionBoost - dt * 0.85);
-    const passivePresence = !mqDesktop.matches ? (prefersCoarsePointer ? 0.34 : 0.2) : 0;
-    const presenceBoost = passivePresence + interactionBoost;
-    const touchScaleBoost = 1 + presenceBoost * 0.45 + (isInside ? 0.14 : 0);
 
     const p0 = toLocal(satX, satY);
     const p1 = toLocal(headP.x, headP.y);
@@ -841,12 +832,6 @@ function setupHeroBlobMask(reduceMotion) {
       const organicOffsetScale = mqDesktop.matches ? 1 : mqTablet.matches ? 0.9 : 0.78;
       const organicOffsetX = blobSize * HERO_CURSOR_ORGANIC_OFFSET * organicOffsetScale;
       const organicOffsetY = blobSize * (HERO_CURSOR_ORGANIC_OFFSET * 0.85) * organicOffsetScale;
-      cSat?.setAttribute("r", String(rSat() * HERO_CURSOR_BLOB_SCALE * touchScaleBoost));
-      cHead?.setAttribute("r", String(rHead() * HERO_CURSOR_BLOB_SCALE * touchScaleBoost));
-      cBody1?.setAttribute("r", String(rB1() * HERO_CURSOR_BLOB_SCALE * touchScaleBoost));
-      cBody2?.setAttribute("r", String(rB2() * HERO_CURSOR_BLOB_SCALE * touchScaleBoost));
-      cTemple?.setAttribute("r", String(rB2() * 0.72 * HERO_CURSOR_BLOB_SCALE * touchScaleBoost));
-      cJaw?.setAttribute("r", String(rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE * touchScaleBoost));
       cSat?.setAttribute("cx", String(p0.x));
       cSat?.setAttribute("cy", String(p0.y));
       cHead?.setAttribute("cx", String(p1.x));
@@ -869,10 +854,9 @@ function setupHeroBlobMask(reduceMotion) {
       const organicOffsetScale = mqDesktop.matches ? 1 : mqTablet.matches ? 0.9 : 0.78;
       const organicOffsetX = blobSize * HERO_CURSOR_ORGANIC_OFFSET * organicOffsetScale;
       const organicOffsetY = blobSize * (HERO_CURSOR_ORGANIC_OFFSET * 0.85) * organicOffsetScale;
-      const gradientScale = 1 + presenceBoost * 0.52 + (isInside ? 0.16 : 0);
       const pushLayer = (radius, x, y) => {
         gradientLayers.push(
-          `radial-gradient(circle ${Math.max(8, radius * gradientScale).toFixed(1)}px at ${x.toFixed(1)}px ${y.toFixed(1)}px, #000 98%, transparent 100%)`,
+          `radial-gradient(circle ${Math.max(8, radius).toFixed(1)}px at ${x.toFixed(1)}px ${y.toFixed(1)}px, #000 98%, transparent 100%)`,
         );
       };
       pushLayer(rSat() * HERO_CURSOR_BLOB_SCALE, p0.x, p0.y);
@@ -896,9 +880,9 @@ function setupHeroBlobMask(reduceMotion) {
         b.mainL?.setAttribute("cy", String(pm.y));
         b.mainS?.setAttribute("cx", String(pm.x));
         b.mainS?.setAttribute("cy", String(pm.y));
-      } else if (maskMode === "gradient" && gradientLayers.length < 24) {
+      } else if (maskMode === "gradient" && gradientLayers.length < 18) {
         gradientLayers.push(
-          `radial-gradient(circle ${Math.max(6, rHead() * (0.45 + presenceBoost * 0.12)).toFixed(1)}px at ${pm.x.toFixed(1)}px ${pm.y.toFixed(1)}px, #000 97%, transparent 100%)`,
+          `radial-gradient(circle ${Math.max(6, rHead() * 0.45).toFixed(1)}px at ${pm.x.toFixed(1)}px ${pm.y.toFixed(1)}px, #000 97%, transparent 100%)`,
         );
       }
     });
@@ -907,7 +891,7 @@ function setupHeroBlobMask(reduceMotion) {
       const maskValue = gradientLayers.length ? gradientLayers.join(",") : "none";
       setMaskImageValue(maskValue);
     } else if (maskMode === "clip") {
-      const clipRadius = Math.max(36, blobSize * (1 + presenceBoost * 0.48 + (isInside ? 0.12 : 0)));
+      const clipRadius = Math.max(36, blobSize * 0.9);
       reveal.style.clipPath = `circle(${clipRadius.toFixed(1)}px at ${p1.x.toFixed(1)}px ${p1.y.toFixed(1)}px)`;
     }
 
