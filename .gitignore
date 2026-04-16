@@ -19,6 +19,10 @@ build/
 # Local folders not used by this static site entrypoint
 css/
 js/
+lando-norris/
+
+# Local-only assets not used by current production page
+assets/images/pp.jpg
 
 # Large local videos (not referenced by current page)
 *.mp4
