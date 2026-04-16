@@ -542,6 +542,16 @@ function setupHeroBlobMask(reduceMotion) {
     return () => {};
   }
 
+  // Safari iOS costuma ser mais estável com máscara aplicada também via inline style.
+  reveal.style.maskImage = "url('#hero-blob-mask')";
+  reveal.style.webkitMaskImage = "url('#hero-blob-mask')";
+  reveal.style.maskRepeat = "no-repeat";
+  reveal.style.webkitMaskRepeat = "no-repeat";
+  reveal.style.maskSize = "100% 100%";
+  reveal.style.webkitMaskSize = "100% 100%";
+  reveal.style.maskPosition = "0 0";
+  reveal.style.webkitMaskPosition = "0 0";
+
   let parallaxStrength = HERO_PARALLAX;
   let blobSize = HERO_BLOB_SIZE;
   let wobbleR = blobSize * 0.35;
@@ -743,6 +753,8 @@ function setupHeroBlobMask(reduceMotion) {
       const driftTime = tMs * 0.00045;
       ratioTx = Math.sin(driftTime) * 0.18;
       ratioTy = Math.cos(driftTime * 1.22) * 0.14;
+      mouseTx = cw * (0.5 + Math.sin(driftTime * 1.35) * 0.12);
+      mouseTy = ch * (0.5 + Math.cos(driftTime * 1.08) * 0.1);
     }
 
     const rs = ratioSpring.step(ratioTx, ratioTy, dt);
@@ -764,7 +776,9 @@ function setupHeroBlobMask(reduceMotion) {
 
     const toLocal = (mx, my) => ({ x: mx - ox, y: my - oy });
 
-    if (isInside) {
+    const shouldShowCursorBlob = isInside || !mqDesktop.matches;
+
+    if (shouldShowCursorBlob) {
       cursorG.setAttribute("opacity", "1");
       const p0 = toLocal(satX, satY);
       const p1 = toLocal(headP.x, headP.y);
@@ -879,6 +893,14 @@ function setupHeroBlobMask(reduceMotion) {
     cursorG.remove();
     autoG.remove();
     gsap.set([base, reveal], { clearProps: "transform" });
+    reveal.style.removeProperty("mask-image");
+    reveal.style.removeProperty("-webkit-mask-image");
+    reveal.style.removeProperty("mask-repeat");
+    reveal.style.removeProperty("-webkit-mask-repeat");
+    reveal.style.removeProperty("mask-size");
+    reveal.style.removeProperty("-webkit-mask-size");
+    reveal.style.removeProperty("mask-position");
+    reveal.style.removeProperty("-webkit-mask-position");
   };
 }
 
