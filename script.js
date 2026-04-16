@@ -453,7 +453,8 @@ function setupMenu(reduceMotion) {
 
 // —— 2. Hero: máscara SVG “goo” + blobs ——
 const HERO_NS = "http://www.w3.org/2000/svg";
-const NUM_AUTO_BLOBS = 25;
+const NUM_AUTO_BLOBS_DESKTOP = 25;
+const NUM_AUTO_BLOBS_MOBILE = 10;
 const HERO_BLOB_SIZE = 140;
 const HERO_BLOB_MIN = 72;
 const HERO_BLOB_MAX = 192;
@@ -466,6 +467,14 @@ const HERO_REVEAL_HEIGHT_RATIO = 0.6;
 const HERO_CURSOR_BLOB_SCALE = 1.12;
 const HERO_AUTO_BLOB_SCALE = 1.12;
 const HERO_CURSOR_ORGANIC_OFFSET = 0.16;
+const HERO_MOBILE_REVEAL_HEIGHT_RATIO = 0.61;
+const HERO_TABLET_REVEAL_HEIGHT_RATIO = 0.6;
+const HERO_MOBILE_REVEAL_TOP_OFFSET_RATIO = 0.012;
+const HERO_TABLET_REVEAL_TOP_OFFSET_RATIO = 0.006;
+const HERO_TABLET_PARALLAX_FACTOR = 0.88;
+const HERO_MOBILE_PARALLAX_FACTOR = 0.72;
+const HERO_MOBILE_BLOB_FACTOR = 0.78;
+const HERO_TABLET_BLOB_FACTOR = 0.9;
 
 function spring2DCreate(stiffness, damping) {
   let x = 0;
@@ -523,7 +532,8 @@ function setupHeroBlobMask(reduceMotion) {
   const blobRoot = document.getElementById("hero-mask-blobs");
   if (!stage || !base || !reveal || !maskEl || !blobRoot) return () => {};
 
-  const mqLg = window.matchMedia("(min-width: 1024px)");
+  const mqDesktop = window.matchMedia("(min-width: 1024px)");
+  const mqTablet = window.matchMedia("(min-width: 768px)");
 
   if (reduceMotion) {
     reveal.style.maskImage = "none";
@@ -532,9 +542,11 @@ function setupHeroBlobMask(reduceMotion) {
     return () => {};
   }
 
-  const parallaxStrength = HERO_PARALLAX;
+  let parallaxStrength = HERO_PARALLAX;
   let blobSize = HERO_BLOB_SIZE;
   let wobbleR = blobSize * 0.35;
+  let revealHeightRatio = HERO_REVEAL_HEIGHT_RATIO;
+  let revealTopOffsetRatio = 0;
 
   const head = spring2DCreate(250, 30);
   const body1 = spring2DCreate(220, 34);
@@ -565,14 +577,34 @@ function setupHeroBlobMask(reduceMotion) {
     circle.setAttribute("r", String(radius));
   };
 
+  const updateResponsiveHeroTuning = (stageRect) => {
+    const width = stageRect.width;
+    if (mqDesktop.matches) {
+      revealHeightRatio = HERO_REVEAL_HEIGHT_RATIO;
+      revealTopOffsetRatio = 0;
+      parallaxStrength = HERO_PARALLAX;
+      return 1;
+    }
+    if (mqTablet.matches) {
+      revealHeightRatio = HERO_TABLET_REVEAL_HEIGHT_RATIO;
+      revealTopOffsetRatio = HERO_TABLET_REVEAL_TOP_OFFSET_RATIO;
+      parallaxStrength = HERO_PARALLAX * HERO_TABLET_PARALLAX_FACTOR;
+      return HERO_TABLET_BLOB_FACTOR;
+    }
+    revealHeightRatio = HERO_MOBILE_REVEAL_HEIGHT_RATIO;
+    revealTopOffsetRatio = HERO_MOBILE_REVEAL_TOP_OFFSET_RATIO;
+    parallaxStrength = HERO_PARALLAX * HERO_MOBILE_PARALLAX_FACTOR;
+    return width < 420 ? HERO_MOBILE_BLOB_FACTOR * 0.92 : HERO_MOBILE_BLOB_FACTOR;
+  };
+
   const syncRevealFrame = () => {
     const stageRect = stage.getBoundingClientRect();
     const baseBox = getContainBox(stageRect.width, stageRect.height, HERO_BASE_IMAGE_RATIO);
-    const revealHeight = baseBox.height * HERO_REVEAL_HEIGHT_RATIO;
+    const revealHeight = baseBox.height * revealHeightRatio;
     const revealWidth = revealHeight * HERO_REVEAL_IMAGE_RATIO;
     const revealLeft = baseBox.x + (baseBox.width - revealWidth) * 0.5;
-    const revealTopRatio = HERO_BASE_VISIBLE_TOP_RATIO - HERO_REVEAL_VISIBLE_TOP_RATIO * HERO_REVEAL_HEIGHT_RATIO;
-    const revealTop = baseBox.y + baseBox.height * revealTopRatio;
+    const revealTopRatio = HERO_BASE_VISIBLE_TOP_RATIO - HERO_REVEAL_VISIBLE_TOP_RATIO * revealHeightRatio;
+    const revealTop = baseBox.y + baseBox.height * (revealTopRatio + revealTopOffsetRatio);
 
     reveal.style.setProperty("--hero-reveal-width", `${revealWidth}px`);
     reveal.style.setProperty("--hero-reveal-height", `${revealHeight}px`);
@@ -603,7 +635,8 @@ function setupHeroBlobMask(reduceMotion) {
   const cJaw = mkCircle(cursorG, rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE);
 
   const autoState = [];
-  for (let i = 0; i < NUM_AUTO_BLOBS; i += 1) {
+  const autoBlobCount = mqDesktop.matches ? NUM_AUTO_BLOBS_DESKTOP : NUM_AUTO_BLOBS_MOBILE;
+  for (let i = 0; i < autoBlobCount; i += 1) {
     autoState.push({
       phaseX: Math.random() * Math.PI * 2,
       phaseY: Math.random() * Math.PI * 2,
@@ -616,7 +649,6 @@ function setupHeroBlobMask(reduceMotion) {
   }
 
   const syncMaskExtents = () => {
-    if (!mqLg.matches) return;
     const w = Math.max(1, Math.ceil(reveal.getBoundingClientRect().width));
     const h = Math.max(1, Math.ceil(reveal.getBoundingClientRect().height));
     maskEl.setAttribute("x", "0");
@@ -625,15 +657,13 @@ function setupHeroBlobMask(reduceMotion) {
     maskEl.setAttribute("height", String(h));
   };
 
-  const onMove = (e) => {
-    if (!mqLg.matches) return;
-
+  const updatePointerTarget = (clientX, clientY) => {
     const cRect = stage.getBoundingClientRect();
     isInside =
-      e.clientX >= cRect.left &&
-      e.clientX <= cRect.right &&
-      e.clientY >= cRect.top &&
-      e.clientY <= cRect.bottom;
+      clientX >= cRect.left &&
+      clientX <= cRect.right &&
+      clientY >= cRect.top &&
+      clientY <= cRect.bottom;
 
     if (!isInside) {
       ratioTx = 0;
@@ -643,12 +673,34 @@ function setupHeroBlobMask(reduceMotion) {
       return;
     }
 
-    const x = e.clientX - cRect.left;
-    const y = e.clientY - cRect.top;
+    const x = clientX - cRect.left;
+    const y = clientY - cRect.top;
     mouseTx = x;
     mouseTy = y;
     ratioTx = (x / cRect.width) * 2 - 1;
     ratioTy = (y / cRect.height) * 2 - 1;
+  };
+
+  const onMove = (e) => {
+    updatePointerTarget(e.clientX, e.clientY);
+  };
+
+  const onTouchStart = (e) => {
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    updatePointerTarget(touch.clientX, touch.clientY);
+  };
+
+  const onTouchMove = (e) => {
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    updatePointerTarget(touch.clientX, touch.clientY);
+  };
+
+  const onTouchEnd = () => {
+    isInside = false;
+    ratioTx = 0;
+    ratioTy = 0;
   };
 
   let raf = 0;
@@ -656,10 +708,6 @@ function setupHeroBlobMask(reduceMotion) {
   const tick = (tMs) => {
     const dt = Math.min(0.045, Math.max(1 / 240, (tMs - prevMs) / 1000));
     prevMs = tMs;
-    if (!mqLg.matches) {
-      raf = requestAnimationFrame(tick);
-      return;
-    }
 
     const cRect = stage.getBoundingClientRect();
     const rRect = reveal.getBoundingClientRect();
@@ -693,8 +741,9 @@ function setupHeroBlobMask(reduceMotion) {
       const p1 = toLocal(headP.x, headP.y);
       const p2 = toLocal(b1.x, b1.y);
       const p3 = toLocal(b2.x, b2.y);
-      const organicOffsetX = blobSize * HERO_CURSOR_ORGANIC_OFFSET;
-      const organicOffsetY = blobSize * (HERO_CURSOR_ORGANIC_OFFSET * 0.85);
+      const organicOffsetScale = mqDesktop.matches ? 1 : mqTablet.matches ? 0.9 : 0.78;
+      const organicOffsetX = blobSize * HERO_CURSOR_ORGANIC_OFFSET * organicOffsetScale;
+      const organicOffsetY = blobSize * (HERO_CURSOR_ORGANIC_OFFSET * 0.85) * organicOffsetScale;
       cSat.setAttribute("cx", String(p0.x));
       cSat.setAttribute("cy", String(p0.y));
       cHead.setAttribute("cx", String(p1.x));
@@ -711,12 +760,12 @@ function setupHeroBlobMask(reduceMotion) {
       cursorG.setAttribute("opacity", "0");
     }
 
-    const satRadius = blobSize * 0.35;
+    const autoSatRadius = blobSize * (mqDesktop.matches ? 0.35 : mqTablet.matches ? 0.3 : 0.24);
     autoState.forEach((b) => {
       const mainX = ((Math.sin(tMs * b.speedX + b.phaseX) + 1) / 2) * cw;
       const mainY = ((Math.cos(tMs * b.speedY + b.phaseY) + 1) / 2) * ch;
-      const sx = mainX + Math.sin(tMs * 0.002 + b.phaseX) * satRadius;
-      const sy = mainY + Math.cos(tMs * 0.002 + b.phaseY) * satRadius;
+      const sx = mainX + Math.sin(tMs * 0.002 + b.phaseX) * autoSatRadius;
+      const sy = mainY + Math.cos(tMs * 0.002 + b.phaseY) * autoSatRadius;
       const ps = toLocal(sx, sy);
       const pm = toLocal(mainX, mainY);
       b.sat.setAttribute("cx", String(ps.x));
@@ -732,15 +781,13 @@ function setupHeroBlobMask(reduceMotion) {
 
   const onResize = () => {
     const cRect = stage.getBoundingClientRect();
+    const blobFactor = updateResponsiveHeroTuning(cRect);
     mouseTx = cRect.width * 0.5;
     mouseTy = cRect.height * 0.5;
-    if (!mqLg.matches) {
-      gsap.set([base, reveal], { clearProps: "transform" });
-      cursorG.setAttribute("opacity", "0");
-      return;
-    }
     syncRevealFrame();
     updateBlobScale();
+    blobSize *= blobFactor;
+    wobbleR = blobSize * 0.35;
     setCircleRadius(cSat, rSat() * HERO_CURSOR_BLOB_SCALE);
     setCircleRadius(cHead, rHead() * HERO_CURSOR_BLOB_SCALE);
     setCircleRadius(cBody1, rB1() * HERO_CURSOR_BLOB_SCALE);
@@ -760,11 +807,15 @@ function setupHeroBlobMask(reduceMotion) {
   };
 
   window.addEventListener("mousemove", onMove);
+  stage.addEventListener("touchstart", onTouchStart, { passive: true });
+  stage.addEventListener("touchmove", onTouchMove, { passive: true });
+  stage.addEventListener("touchend", onTouchEnd, { passive: true });
+  stage.addEventListener("touchcancel", onTouchEnd, { passive: true });
   window.addEventListener("resize", onResize);
-  if (typeof mqLg.addEventListener === "function") {
-    mqLg.addEventListener("change", onResize);
+  if (typeof mqDesktop.addEventListener === "function") {
+    mqDesktop.addEventListener("change", onResize);
   } else {
-    mqLg.addListener(onResize);
+    mqDesktop.addListener(onResize);
   }
   onResize();
   raf = requestAnimationFrame(tick);
@@ -772,11 +823,15 @@ function setupHeroBlobMask(reduceMotion) {
   return () => {
     cancelAnimationFrame(raf);
     window.removeEventListener("mousemove", onMove);
+    stage.removeEventListener("touchstart", onTouchStart);
+    stage.removeEventListener("touchmove", onTouchMove);
+    stage.removeEventListener("touchend", onTouchEnd);
+    stage.removeEventListener("touchcancel", onTouchEnd);
     window.removeEventListener("resize", onResize);
-    if (typeof mqLg.removeEventListener === "function") {
-      mqLg.removeEventListener("change", onResize);
+    if (typeof mqDesktop.removeEventListener === "function") {
+      mqDesktop.removeEventListener("change", onResize);
     } else {
-      mqLg.removeListener(onResize);
+      mqDesktop.removeListener(onResize);
     }
     cursorG.remove();
     autoG.remove();
@@ -997,18 +1052,12 @@ function setupPanelStack(reduceMotion) {
   if (reduceMotion) return () => {};
   if (!document.getElementById("main-content")) return () => {};
 
-  const mm = ScrollTrigger.matchMedia({
-    "(min-width: 1024px)": () => {
-      document.body.classList.add("panel-stack-active");
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-      return () => {
-        document.body.classList.remove("panel-stack-active");
-        requestAnimationFrame(() => ScrollTrigger.refresh());
-      };
-    },
-  });
-
-  return () => mm.revert();
+  document.body.classList.add("panel-stack-active");
+  requestAnimationFrame(() => ScrollTrigger.refresh());
+  return () => {
+    document.body.classList.remove("panel-stack-active");
+    requestAnimationFrame(() => ScrollTrigger.refresh());
+  };
 }
 
 function setupStackPin(reduceMotion) {
@@ -1018,25 +1067,11 @@ function setupStackPin(reduceMotion) {
   if (!section || !inner) return () => {};
 
   /**
-   * Pin + painéis sticky (`panel-stack-active`, ≥1024px) competem pelo mesmo eixo de scroll:
-   * o miolo pinado passa a comportar-se como `position: fixed` e sobrepõe secções anteriores
-   * (#sobre) — texto “FRO/NT END”, métricas e “Stack/Core” no mesmo plano.
-   * Mantemos pin só em viewport estreita, onde o sticky empilhado não está ativo.
+   * Com panel stack ativo em todas as telas, o pin do #stack passa a competir
+   * com os paineis sticky e causa sobreposicoes e recortes.
+   * Mantemos este setup como no-op para preservar o fluxo de scroll consistente.
    */
-  const mm = ScrollTrigger.matchMedia({
-    "(max-width: 1023px)": () => {
-      const st = ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: "bottom bottom",
-        pin: inner,
-        pinSpacing: true,
-      });
-      return () => st.kill();
-    },
-  });
-
-  return () => mm.revert();
+  return () => {};
 }
 
 function setupCounters(reduceMotion) {
@@ -1202,6 +1237,8 @@ function setupScrollHighlights(reduceMotion) {
 function setupProjectCards(reduceMotion) {
   const container = document.getElementById("project-cards");
   if (!container) return;
+  const stackedProjectsMq = window.matchMedia("(max-width: 1024px)");
+  const isStackedProjectsView = stackedProjectsMq.matches;
   const videoModal = document.getElementById("video-modal");
   const videoPlayer = document.getElementById("video-modal-player");
   const videoCloseBtn = document.getElementById("video-modal-close");
@@ -1260,6 +1297,25 @@ function setupProjectCards(reduceMotion) {
   grid.className = "project-showcase-grid";
   container.replaceChildren(grid);
 
+  const applyProjectsLayoutMode = () => {
+    const width = window.innerWidth || 0;
+    grid.classList.remove("project-showcase-grid--desktop", "project-showcase-grid--tablet", "project-showcase-grid--mobile");
+    if (width <= 900) {
+      grid.classList.add("project-showcase-grid--mobile");
+      return;
+    }
+    if (width <= 1200) {
+      grid.classList.add("project-showcase-grid--tablet");
+      return;
+    }
+    grid.classList.add("project-showcase-grid--desktop");
+  };
+
+  applyProjectsLayoutMode();
+  const onProjectsViewportChange = () => applyProjectsLayoutMode();
+  window.addEventListener("resize", onProjectsViewportChange, { passive: true });
+  cleanups.push(() => window.removeEventListener("resize", onProjectsViewportChange));
+
   PROJECTS.forEach((project, index) => {
     const [name, year, role, tags, image, link] = project;
     const card = document.createElement("article");
@@ -1290,7 +1346,7 @@ function setupProjectCards(reduceMotion) {
 
     const tagsRow = document.createElement("div");
     tagsRow.className = "project-showcase-card__tags";
-    (tags || []).slice(0, 3).forEach((tag) => {
+    (tags || []).forEach((tag) => {
       const chip = document.createElement("span");
       chip.textContent = tag;
       tagsRow.appendChild(chip);
@@ -1317,7 +1373,7 @@ function setupProjectCards(reduceMotion) {
     cards.push(card);
   });
 
-  if (reduceMotion || !cards.length) {
+  if (reduceMotion || isStackedProjectsView || !cards.length) {
     return () => cleanups.forEach((cleanup) => cleanup());
   }
 
