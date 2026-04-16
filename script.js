@@ -144,7 +144,18 @@ function buildStackFromFreelanceProjects() {
   return out;
 }
 
-const STACK = buildStackFromFreelanceProjects();
+const STACK = [
+  "JavaScript",
+  "CSS",
+  "HTML",
+  "GSAP",
+  "ScrollTrigger",
+  "Three.js",
+  "Node.js",
+  "MongoDB",
+  "UI",
+  "Performance",
+];
 
 const STACK_ICON_SLUG_BY_LABEL = {
   TypeScript: "typescript",
@@ -166,6 +177,7 @@ const STACK_ICON_SLUG_BY_LABEL = {
   "Back-end": "serverless",
   UI: "storybook",
   "Landing Page": "googlechrome",
+  Performance: "lighthouse",
 };
 
 const LAB_ITEMS = [
@@ -722,6 +734,122 @@ function setupHeroProfileCard(reduceMotion) {
   };
 }
 
+function setupPerspectiveHoverCards(reduceMotion) {
+  const cards = Array.from(document.querySelectorAll(".js-tilt-card"));
+  if (!cards.length) return () => {};
+
+  const states = cards.map((card) => ({
+    card,
+    glare: card.querySelector(".footer-cta-glare"),
+    targetX: 0,
+    targetY: 0,
+    currentX: 0,
+    currentY: 0,
+    velocityX: 0,
+    velocityY: 0,
+    glareTargetX: 50,
+    glareTargetY: 50,
+    glareX: 50,
+    glareY: 50,
+    glareOpacity: 0,
+    active: false,
+  }));
+
+  const maxTiltX = 10;
+  const maxTiltY = 10;
+  const stiffness = 150;
+  const damping = 20;
+  let previousTime = performance.now();
+
+  const onMoveFactory = (state) => (event) => {
+    const rect = state.card.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const relX = (event.clientX - rect.left) / rect.width;
+    const relY = (event.clientY - rect.top) / rect.height;
+    const nx = Math.max(-1, Math.min(1, relX * 2 - 1));
+    const ny = Math.max(-1, Math.min(1, relY * 2 - 1));
+
+    state.targetX = nx;
+    state.targetY = ny;
+    state.glareTargetX = relX * 100;
+    state.glareTargetY = relY * 100;
+    state.active = true;
+  };
+
+  const onLeaveFactory = (state) => () => {
+    state.targetX = 0;
+    state.targetY = 0;
+    state.glareTargetX = 50;
+    state.glareTargetY = 50;
+    state.active = false;
+  };
+
+  states.forEach((state) => {
+    state.onMove = onMoveFactory(state);
+    state.onLeave = onLeaveFactory(state);
+    state.card.addEventListener("mousemove", state.onMove);
+    state.card.addEventListener("mouseleave", state.onLeave);
+  });
+
+  if (reduceMotion) {
+    return () => {
+      states.forEach((state) => {
+        state.card.removeEventListener("mousemove", state.onMove);
+        state.card.removeEventListener("mouseleave", state.onLeave);
+      });
+    };
+  }
+
+  const tick = () => {
+    const now = performance.now();
+    const dt = Math.min(0.034, (now - previousTime) / 1000);
+    previousTime = now;
+    const smoothing = Math.min(1, 0.12 * gsap.ticker.deltaRatio(60));
+
+    states.forEach((state) => {
+      const forceX = stiffness * (state.targetX - state.currentX);
+      const forceY = stiffness * (state.targetY - state.currentY);
+
+      state.velocityX += (forceX - damping * state.velocityX) * dt;
+      state.velocityY += (forceY - damping * state.velocityY) * dt;
+      state.currentX += state.velocityX * dt;
+      state.currentY += state.velocityY * dt;
+
+      const rotateX = -state.currentY * maxTiltX;
+      const rotateY = state.currentX * maxTiltY;
+
+      state.glareX += (state.glareTargetX - state.glareX) * smoothing;
+      state.glareY += (state.glareTargetY - state.glareY) * smoothing;
+      state.glareOpacity += ((state.active ? 0.85 : 0) - state.glareOpacity) * smoothing;
+
+      state.card.style.transform = `rotateX(${rotateX.toFixed(3)}deg) rotateY(${rotateY.toFixed(3)}deg)`;
+
+      if (state.glare) {
+        state.glare.style.setProperty("--glare-x", `${state.glareX.toFixed(2)}%`);
+        state.glare.style.setProperty("--glare-y", `${state.glareY.toFixed(2)}%`);
+        state.glare.style.opacity = state.glareOpacity.toFixed(3);
+      }
+    });
+  };
+
+  gsap.ticker.add(tick);
+
+  return () => {
+    gsap.ticker.remove(tick);
+    states.forEach((state) => {
+      state.card.removeEventListener("mousemove", state.onMove);
+      state.card.removeEventListener("mouseleave", state.onLeave);
+      state.card.style.removeProperty("transform");
+      if (state.glare) {
+        state.glare.style.removeProperty("--glare-x");
+        state.glare.style.removeProperty("--glare-y");
+        state.glare.style.removeProperty("opacity");
+      }
+    });
+  };
+}
+
 function setupPageIntroOutro(reduceMotion) {
   const sections = gsap.utils.toArray("main > section");
   const header = document.querySelector(".header");
@@ -1239,6 +1367,140 @@ function setupContatoOverlay(reduceMotion) {
   };
 }
 
+function setupContatoLandoReplica(reduceMotion) {
+  const contato = document.getElementById("contato");
+  if (!contato) return () => {};
+
+  const menuBgs = gsap.utils.toArray("#contato .menu-item .menu-bg");
+  const pageLinks = [...contato.querySelectorAll(".ln-footer-links--left .menu-link[href^='#']")];
+  const marquee = document.getElementById("ln-footer-marquee");
+  const marqueeContent = document.getElementById("ln-footer-marquee-content");
+  const cleanups = [];
+
+  const activatePageLink = (hash) => {
+    pageLinks.forEach((link) => {
+      link.classList.toggle("is-active", link.getAttribute("href") === hash);
+    });
+  };
+
+  const scrollToHashTarget = (hash) => {
+    if (!hash || !hash.startsWith("#")) return;
+    const target = document.querySelector(hash);
+    if (!target) return;
+    const header = document.querySelector(".header");
+    const headerOffset = header ? header.offsetHeight + 10 : 0;
+    const top = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  };
+
+  const updateActivePageFromViewport = () => {
+    if (!pageLinks.length) return;
+    const viewportMid = window.innerHeight * 0.36;
+    let bestHash = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    pageLinks.forEach((link) => {
+      const hash = link.getAttribute("href");
+      const section = hash ? document.querySelector(hash) : null;
+      if (!section) return;
+      const rect = section.getBoundingClientRect();
+      const distance = Math.abs(rect.top - viewportMid);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestHash = hash;
+      }
+    });
+
+    if (bestHash) activatePageLink(bestHash);
+  };
+
+  if (pageLinks.length) {
+    const onPageLinkClick = (e) => {
+      const link = e.currentTarget;
+      const hash = link && link.getAttribute ? link.getAttribute("href") : null;
+      if (!hash) return;
+      e.preventDefault();
+      activatePageLink(hash);
+      scrollToHashTarget(hash);
+    };
+
+    pageLinks.forEach((link) => link.addEventListener("click", onPageLinkClick));
+    const onScroll = () => updateActivePageFromViewport();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    updateActivePageFromViewport();
+
+    cleanups.push(() => {
+      pageLinks.forEach((link) => link.removeEventListener("click", onPageLinkClick));
+      window.removeEventListener("scroll", onScroll);
+    });
+  }
+
+  if (!reduceMotion && menuBgs.length) {
+    gsap.set(menuBgs, { xPercent: -100 });
+    const tl = gsap.timeline({ paused: true });
+    menuBgs.forEach((bg, index) => {
+      tl.to(
+        bg,
+        {
+          xPercent: 100,
+          duration: 0.8,
+          ease: "power2.out",
+        },
+        index * 0.05,
+      );
+    });
+    tl.to(menuBgs, {
+      xPercent: -100,
+      duration: 0.8,
+      ease: "power2.in",
+      delay: 0.4,
+    });
+
+    const st = ScrollTrigger.create({
+      trigger: contato,
+      start: "top 80%",
+      toggleActions: "restart none restart none",
+      animation: tl,
+    });
+    cleanups.push(() => {
+      st.kill();
+      tl.kill();
+    });
+  }
+
+  if (!reduceMotion && marquee && marqueeContent) {
+    let direction = 1;
+    const speed = 0.4;
+    let x = 0;
+    const contentWidth = marqueeContent.offsetWidth || 1;
+    gsap.set(marquee, { x: 0 });
+
+    const tick = () => {
+      x += speed * direction;
+      if (x <= -contentWidth) x += contentWidth;
+      if (x >= 0) x -= contentWidth;
+      gsap.set(marquee, { x });
+    };
+    gsap.ticker.add(tick);
+
+    const st = ScrollTrigger.create({
+      trigger: marquee,
+      start: "top bottom",
+      end: "bottom top",
+      onUpdate: (self) => {
+        direction = self.direction === 1 ? 1 : -1;
+      },
+    });
+
+    cleanups.push(() => {
+      gsap.ticker.remove(tick);
+      st.kill();
+    });
+  }
+
+  return () => cleanups.forEach((fn) => fn());
+}
+
 function setupPartnersMarquee(reduceMotion) {
   const track = document.getElementById("marquee-track");
   const wrap = document.getElementById("partners-marquee");
@@ -1596,6 +1858,7 @@ function main() {
     disposers.push(setupMenu(reduceMotion));
     disposers.push(setupHeroBlobMask(reduceMotion));
     disposers.push(setupHeroProfileCard(reduceMotion));
+    disposers.push(setupPerspectiveHoverCards(reduceMotion));
     disposers.push(setupPageIntroOutro(reduceMotion));
     disposers.push(setupScrollProgress(reduceMotion, depthState));
     disposers.push(setupSectionScrollRails(reduceMotion));
@@ -1608,6 +1871,7 @@ function main() {
     const projectDisposer = setupProjectCards(reduceMotion);
     if (typeof projectDisposer === "function") disposers.push(projectDisposer);
     disposers.push(setupContatoOverlay(reduceMotion));
+    disposers.push(setupContatoLandoReplica(reduceMotion));
     disposers.push(setupStackGradientBars(reduceMotion));
     disposers.push(setupPartnersMarquee(reduceMotion));
     disposers.push(setupTrajetoriaExpansion(reduceMotion));
