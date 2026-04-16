@@ -500,6 +500,22 @@ function spring2DCreate(stiffness, damping) {
   };
 }
 
+/**
+ * Safari (macOS), iOS e iPadOS usam composição WebKit onde
+ * `mask-image: url(#svg)` + `feGaussianBlur` no conteúdo da máscara custa muito e costuma travar.
+ * O fallback por gradientes radiais no CSS é estável e fluido nos mesmos browsers.
+ */
+function prefersHeroGradientMaskForStability() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const maxTouch = typeof navigator.maxTouchPoints === "number" ? navigator.maxTouchPoints : 0;
+  const isClassicIOS = /iP(ad|hone|od)/i.test(ua);
+  const isIPadOSLike = /Macintosh/i.test(ua) && maxTouch > 1;
+  if (isClassicIOS || isIPadOSLike) return true;
+  const isDesktopSafari = /Safari/i.test(ua) && !/(Chrome|CriOS|Chromium|Edg|OPR|Android)/i.test(ua);
+  return Boolean(isDesktopSafari);
+}
+
 function getContainBox(containerWidth, containerHeight, assetRatio) {
   const containerRatio = containerWidth / Math.max(1, containerHeight);
 
@@ -554,9 +570,10 @@ function setupHeroBlobMask(reduceMotion) {
       || CSS.supports("-webkit-mask-image", "radial-gradient(circle at 50% 50%, #000 40%, transparent 41%)")
     );
   const prefersCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const preferGradientMask = prefersCoarsePointer || prefersHeroGradientMaskForStability();
 
-  // Em touch devices, priorizamos gradient-mask por ser mais estável que SVG mask em Safari/Android WebView.
-  const maskMode = prefersCoarsePointer && supportsGradientMask
+  // Gradient-mask: estável no WebKit (Safari / iOS / iPadOS). SVG+goo fica para motores Chromium no desktop.
+  const maskMode = preferGradientMask && supportsGradientMask
     ? "gradient"
     : supportsSvgMask
       ? "svg"
@@ -782,6 +799,7 @@ function setupHeroBlobMask(reduceMotion) {
 
   let raf = 0;
   let prevMs = performance.now();
+  let lastGradientMask = "";
   const tick = (tMs) => {
     const dt = Math.min(0.045, Math.max(1 / 240, (tMs - prevMs) / 1000));
     prevMs = tMs;
@@ -808,8 +826,6 @@ function setupHeroBlobMask(reduceMotion) {
     const revY = rs.y * parallaxStrength * 2;
     gsap.set(base, { x: baseX, y: baseY, force3D: true });
     gsap.set(reveal, { x: revX, y: revY, force3D: true });
-
-    if (useSvgMaskDom) syncMaskExtents();
 
     const headP = head.step(mouseTx, mouseTy, dt);
     const b1 = body1.step(mouseTx, mouseTy, dt);
@@ -889,7 +905,10 @@ function setupHeroBlobMask(reduceMotion) {
 
     if (maskMode === "gradient") {
       const maskValue = gradientLayers.length ? gradientLayers.join(",") : "none";
-      setMaskImageValue(maskValue);
+      if (maskValue !== lastGradientMask) {
+        lastGradientMask = maskValue;
+        setMaskImageValue(maskValue);
+      }
     } else if (maskMode === "clip") {
       const clipRadius = Math.max(36, blobSize * 0.9);
       reveal.style.clipPath = `circle(${clipRadius.toFixed(1)}px at ${p1.x.toFixed(1)}px ${p1.y.toFixed(1)}px)`;
@@ -899,6 +918,7 @@ function setupHeroBlobMask(reduceMotion) {
   };
 
   const onResize = () => {
+    lastGradientMask = "";
     const cRect = stage.getBoundingClientRect();
     const blobFactor = updateResponsiveHeroTuning(cRect);
     mouseTx = cRect.width * 0.5;
