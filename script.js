@@ -542,15 +542,56 @@ function setupHeroBlobMask(reduceMotion) {
     return () => {};
   }
 
-  // Safari iOS costuma ser mais estável com máscara aplicada também via inline style.
-  reveal.style.maskImage = "url('#hero-blob-mask')";
-  reveal.style.webkitMaskImage = "url('#hero-blob-mask')";
+  const hasCssSupports = typeof CSS !== "undefined" && typeof CSS.supports === "function";
+  const supportsSvgMask = hasCssSupports
+    && (
+      CSS.supports("mask-image", "url('#hero-blob-mask')")
+      || CSS.supports("-webkit-mask-image", "url('#hero-blob-mask')")
+    );
+  const supportsGradientMask = hasCssSupports
+    && (
+      CSS.supports("mask-image", "radial-gradient(circle at 50% 50%, #000 40%, transparent 41%)")
+      || CSS.supports("-webkit-mask-image", "radial-gradient(circle at 50% 50%, #000 40%, transparent 41%)")
+    );
+  const prefersCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+  // Em touch devices, priorizamos gradient-mask por ser mais estável que SVG mask em Safari/Android WebView.
+  const maskMode = prefersCoarsePointer && supportsGradientMask
+    ? "gradient"
+    : supportsSvgMask
+      ? "svg"
+      : supportsGradientMask
+        ? "gradient"
+        : "clip";
+
+  const setMaskImageValue = (value) => {
+    reveal.style.maskImage = value;
+    reveal.style.webkitMaskImage = value;
+  };
+
   reveal.style.maskRepeat = "no-repeat";
   reveal.style.webkitMaskRepeat = "no-repeat";
   reveal.style.maskSize = "100% 100%";
   reveal.style.webkitMaskSize = "100% 100%";
   reveal.style.maskPosition = "0 0";
   reveal.style.webkitMaskPosition = "0 0";
+  reveal.style.mask = "none";
+  reveal.style.webkitMask = "none";
+
+  if (maskMode === "svg") {
+    setMaskImageValue("url('#hero-blob-mask')");
+    reveal.style.mask = "url('#hero-blob-mask') no-repeat 0 0 / 100% 100%";
+    reveal.style.webkitMask = "url('#hero-blob-mask') no-repeat 0 0 / 100% 100%";
+  } else if (maskMode === "gradient") {
+    setMaskImageValue("none");
+    reveal.style.mask = "none";
+    reveal.style.webkitMask = "none";
+  } else {
+    setMaskImageValue("none");
+    reveal.style.mask = "none";
+    reveal.style.webkitMask = "none";
+    reveal.style.clipPath = "circle(22% at 50% 50%)";
+  }
 
   let parallaxStrength = HERO_PARALLAX;
   let blobSize = HERO_BLOB_SIZE;
@@ -570,11 +611,14 @@ function setupHeroBlobMask(reduceMotion) {
   let isInside = false;
   let activePointerId = null;
 
-  const cursorG = document.createElementNS(HERO_NS, "g");
-  cursorG.setAttribute("id", "hero-cursor-blobs");
-  const autoG = document.createElementNS(HERO_NS, "g");
-  blobRoot.appendChild(cursorG);
-  blobRoot.appendChild(autoG);
+  const useSvgMaskDom = maskMode === "svg";
+  const cursorG = useSvgMaskDom ? document.createElementNS(HERO_NS, "g") : null;
+  const autoG = useSvgMaskDom ? document.createElementNS(HERO_NS, "g") : null;
+  if (cursorG) {
+    cursorG.setAttribute("id", "hero-cursor-blobs");
+    blobRoot.appendChild(cursorG);
+  }
+  if (autoG) blobRoot.appendChild(autoG);
 
   const mkCircle = (parent, r) => {
     const c = document.createElementNS(HERO_NS, "circle");
@@ -638,12 +682,12 @@ function setupHeroBlobMask(reduceMotion) {
   const rB1 = () => blobSize * 0.6;
   const rB2 = () => blobSize * 0.45;
 
-  const cSat = mkCircle(cursorG, rSat() * HERO_CURSOR_BLOB_SCALE);
-  const cHead = mkCircle(cursorG, rHead() * HERO_CURSOR_BLOB_SCALE);
-  const cBody1 = mkCircle(cursorG, rB1() * HERO_CURSOR_BLOB_SCALE);
-  const cBody2 = mkCircle(cursorG, rB2() * HERO_CURSOR_BLOB_SCALE);
-  const cTemple = mkCircle(cursorG, rB2() * 0.72 * HERO_CURSOR_BLOB_SCALE);
-  const cJaw = mkCircle(cursorG, rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE);
+  const cSat = cursorG ? mkCircle(cursorG, rSat() * HERO_CURSOR_BLOB_SCALE) : null;
+  const cHead = cursorG ? mkCircle(cursorG, rHead() * HERO_CURSOR_BLOB_SCALE) : null;
+  const cBody1 = cursorG ? mkCircle(cursorG, rB1() * HERO_CURSOR_BLOB_SCALE) : null;
+  const cBody2 = cursorG ? mkCircle(cursorG, rB2() * HERO_CURSOR_BLOB_SCALE) : null;
+  const cTemple = cursorG ? mkCircle(cursorG, rB2() * 0.72 * HERO_CURSOR_BLOB_SCALE) : null;
+  const cJaw = cursorG ? mkCircle(cursorG, rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE) : null;
 
   const autoState = [];
   const autoBlobCount = mqDesktop.matches ? NUM_AUTO_BLOBS_DESKTOP : NUM_AUTO_BLOBS_MOBILE;
@@ -653,9 +697,9 @@ function setupHeroBlobMask(reduceMotion) {
       phaseY: Math.random() * Math.PI * 2,
       speedX: 0.0005 + Math.random() * 0.0005,
       speedY: 0.0003 + Math.random() * 0.0005,
-      sat: mkCircle(autoG, rSat() * HERO_AUTO_BLOB_SCALE),
-      mainL: mkCircle(autoG, rHead() * HERO_AUTO_BLOB_SCALE),
-      mainS: mkCircle(autoG, rB2() * HERO_AUTO_BLOB_SCALE),
+      sat: autoG ? mkCircle(autoG, rSat() * HERO_AUTO_BLOB_SCALE) : null,
+      mainL: autoG ? mkCircle(autoG, rHead() * HERO_AUTO_BLOB_SCALE) : null,
+      mainS: autoG ? mkCircle(autoG, rB2() * HERO_AUTO_BLOB_SCALE) : null,
     });
   }
 
@@ -765,7 +809,7 @@ function setupHeroBlobMask(reduceMotion) {
     gsap.set(base, { x: baseX, y: baseY, force3D: true });
     gsap.set(reveal, { x: revX, y: revY, force3D: true });
 
-    syncMaskExtents();
+    if (useSvgMaskDom) syncMaskExtents();
 
     const headP = head.step(mouseTx, mouseTy, dt);
     const b1 = body1.step(mouseTx, mouseTy, dt);
@@ -778,32 +822,50 @@ function setupHeroBlobMask(reduceMotion) {
 
     const shouldShowCursorBlob = isInside || !mqDesktop.matches;
 
-    if (shouldShowCursorBlob) {
+    const p0 = toLocal(satX, satY);
+    const p1 = toLocal(headP.x, headP.y);
+    const p2 = toLocal(b1.x, b1.y);
+    const p3 = toLocal(b2.x, b2.y);
+
+    if (shouldShowCursorBlob && cursorG) {
       cursorG.setAttribute("opacity", "1");
-      const p0 = toLocal(satX, satY);
-      const p1 = toLocal(headP.x, headP.y);
-      const p2 = toLocal(b1.x, b1.y);
-      const p3 = toLocal(b2.x, b2.y);
       const organicOffsetScale = mqDesktop.matches ? 1 : mqTablet.matches ? 0.9 : 0.78;
       const organicOffsetX = blobSize * HERO_CURSOR_ORGANIC_OFFSET * organicOffsetScale;
       const organicOffsetY = blobSize * (HERO_CURSOR_ORGANIC_OFFSET * 0.85) * organicOffsetScale;
-      cSat.setAttribute("cx", String(p0.x));
-      cSat.setAttribute("cy", String(p0.y));
-      cHead.setAttribute("cx", String(p1.x));
-      cHead.setAttribute("cy", String(p1.y));
-      cBody1.setAttribute("cx", String(p2.x));
-      cBody1.setAttribute("cy", String(p2.y));
-      cBody2.setAttribute("cx", String(p3.x));
-      cBody2.setAttribute("cy", String(p3.y));
-      cTemple.setAttribute("cx", String(p1.x + organicOffsetX));
-      cTemple.setAttribute("cy", String(p1.y - organicOffsetY));
-      cJaw.setAttribute("cx", String(p3.x - organicOffsetX * 0.6));
-      cJaw.setAttribute("cy", String(p3.y + organicOffsetY * 0.9));
-    } else {
+      cSat?.setAttribute("cx", String(p0.x));
+      cSat?.setAttribute("cy", String(p0.y));
+      cHead?.setAttribute("cx", String(p1.x));
+      cHead?.setAttribute("cy", String(p1.y));
+      cBody1?.setAttribute("cx", String(p2.x));
+      cBody1?.setAttribute("cy", String(p2.y));
+      cBody2?.setAttribute("cx", String(p3.x));
+      cBody2?.setAttribute("cy", String(p3.y));
+      cTemple?.setAttribute("cx", String(p1.x + organicOffsetX));
+      cTemple?.setAttribute("cy", String(p1.y - organicOffsetY));
+      cJaw?.setAttribute("cx", String(p3.x - organicOffsetX * 0.6));
+      cJaw?.setAttribute("cy", String(p3.y + organicOffsetY * 0.9));
+    } else if (cursorG) {
       cursorG.setAttribute("opacity", "0");
     }
 
     const autoSatRadius = blobSize * (mqDesktop.matches ? 0.35 : mqTablet.matches ? 0.3 : 0.24);
+    const gradientLayers = [];
+    if (maskMode === "gradient" && shouldShowCursorBlob) {
+      const organicOffsetScale = mqDesktop.matches ? 1 : mqTablet.matches ? 0.9 : 0.78;
+      const organicOffsetX = blobSize * HERO_CURSOR_ORGANIC_OFFSET * organicOffsetScale;
+      const organicOffsetY = blobSize * (HERO_CURSOR_ORGANIC_OFFSET * 0.85) * organicOffsetScale;
+      const pushLayer = (radius, x, y) => {
+        gradientLayers.push(
+          `radial-gradient(circle ${Math.max(8, radius).toFixed(1)}px at ${x.toFixed(1)}px ${y.toFixed(1)}px, #000 98%, transparent 100%)`,
+        );
+      };
+      pushLayer(rSat() * HERO_CURSOR_BLOB_SCALE, p0.x, p0.y);
+      pushLayer(rHead() * HERO_CURSOR_BLOB_SCALE, p1.x, p1.y);
+      pushLayer(rB1() * HERO_CURSOR_BLOB_SCALE, p2.x, p2.y);
+      pushLayer(rB2() * HERO_CURSOR_BLOB_SCALE, p3.x, p3.y);
+      pushLayer(rB2() * 0.72 * HERO_CURSOR_BLOB_SCALE, p1.x + organicOffsetX, p1.y - organicOffsetY);
+      pushLayer(rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE, p3.x - organicOffsetX * 0.6, p3.y + organicOffsetY * 0.9);
+    }
     autoState.forEach((b) => {
       const mainX = ((Math.sin(tMs * b.speedX + b.phaseX) + 1) / 2) * cw;
       const mainY = ((Math.cos(tMs * b.speedY + b.phaseY) + 1) / 2) * ch;
@@ -811,13 +873,27 @@ function setupHeroBlobMask(reduceMotion) {
       const sy = mainY + Math.cos(tMs * 0.002 + b.phaseY) * autoSatRadius;
       const ps = toLocal(sx, sy);
       const pm = toLocal(mainX, mainY);
-      b.sat.setAttribute("cx", String(ps.x));
-      b.sat.setAttribute("cy", String(ps.y));
-      b.mainL.setAttribute("cx", String(pm.x));
-      b.mainL.setAttribute("cy", String(pm.y));
-      b.mainS.setAttribute("cx", String(pm.x));
-      b.mainS.setAttribute("cy", String(pm.y));
+      if (maskMode === "svg") {
+        b.sat?.setAttribute("cx", String(ps.x));
+        b.sat?.setAttribute("cy", String(ps.y));
+        b.mainL?.setAttribute("cx", String(pm.x));
+        b.mainL?.setAttribute("cy", String(pm.y));
+        b.mainS?.setAttribute("cx", String(pm.x));
+        b.mainS?.setAttribute("cy", String(pm.y));
+      } else if (maskMode === "gradient" && gradientLayers.length < 18) {
+        gradientLayers.push(
+          `radial-gradient(circle ${Math.max(6, rHead() * 0.45).toFixed(1)}px at ${pm.x.toFixed(1)}px ${pm.y.toFixed(1)}px, #000 97%, transparent 100%)`,
+        );
+      }
     });
+
+    if (maskMode === "gradient") {
+      const maskValue = gradientLayers.length ? gradientLayers.join(",") : "none";
+      setMaskImageValue(maskValue);
+    } else if (maskMode === "clip") {
+      const clipRadius = Math.max(36, blobSize * 0.9);
+      reveal.style.clipPath = `circle(${clipRadius.toFixed(1)}px at ${p1.x.toFixed(1)}px ${p1.y.toFixed(1)}px)`;
+    }
 
     raf = requestAnimationFrame(tick);
   };
@@ -831,16 +907,16 @@ function setupHeroBlobMask(reduceMotion) {
     updateBlobScale();
     blobSize *= blobFactor;
     wobbleR = blobSize * 0.35;
-    setCircleRadius(cSat, rSat() * HERO_CURSOR_BLOB_SCALE);
-    setCircleRadius(cHead, rHead() * HERO_CURSOR_BLOB_SCALE);
-    setCircleRadius(cBody1, rB1() * HERO_CURSOR_BLOB_SCALE);
-    setCircleRadius(cBody2, rB2() * HERO_CURSOR_BLOB_SCALE);
-    setCircleRadius(cTemple, rB2() * 0.72 * HERO_CURSOR_BLOB_SCALE);
-    setCircleRadius(cJaw, rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE);
+    if (cSat) setCircleRadius(cSat, rSat() * HERO_CURSOR_BLOB_SCALE);
+    if (cHead) setCircleRadius(cHead, rHead() * HERO_CURSOR_BLOB_SCALE);
+    if (cBody1) setCircleRadius(cBody1, rB1() * HERO_CURSOR_BLOB_SCALE);
+    if (cBody2) setCircleRadius(cBody2, rB2() * HERO_CURSOR_BLOB_SCALE);
+    if (cTemple) setCircleRadius(cTemple, rB2() * 0.72 * HERO_CURSOR_BLOB_SCALE);
+    if (cJaw) setCircleRadius(cJaw, rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE);
     autoState.forEach((blob) => {
-      setCircleRadius(blob.sat, rSat() * HERO_AUTO_BLOB_SCALE);
-      setCircleRadius(blob.mainL, rHead() * HERO_AUTO_BLOB_SCALE);
-      setCircleRadius(blob.mainS, rB2() * HERO_AUTO_BLOB_SCALE);
+      if (blob.sat) setCircleRadius(blob.sat, rSat() * HERO_AUTO_BLOB_SCALE);
+      if (blob.mainL) setCircleRadius(blob.mainL, rHead() * HERO_AUTO_BLOB_SCALE);
+      if (blob.mainS) setCircleRadius(blob.mainS, rB2() * HERO_AUTO_BLOB_SCALE);
     });
     head.reset(mouseTx, mouseTy);
     body1.reset(mouseTx, mouseTy);
@@ -890,8 +966,8 @@ function setupHeroBlobMask(reduceMotion) {
     } else {
       mqDesktop.removeListener(onResize);
     }
-    cursorG.remove();
-    autoG.remove();
+    cursorG?.remove();
+    autoG?.remove();
     gsap.set([base, reveal], { clearProps: "transform" });
     reveal.style.removeProperty("mask-image");
     reveal.style.removeProperty("-webkit-mask-image");
@@ -901,6 +977,9 @@ function setupHeroBlobMask(reduceMotion) {
     reveal.style.removeProperty("-webkit-mask-size");
     reveal.style.removeProperty("mask-position");
     reveal.style.removeProperty("-webkit-mask-position");
+    reveal.style.removeProperty("mask");
+    reveal.style.removeProperty("-webkit-mask");
+    reveal.style.removeProperty("clip-path");
   };
 }
 

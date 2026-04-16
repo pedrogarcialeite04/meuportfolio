@@ -649,9 +649,10 @@ body.header-scrolled .burger-line {
 
 .hero-defs {
   position: absolute;
-  width: 0;
-  height: 0;
-  overflow: visible;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
