@@ -15,7 +15,7 @@ const PROJECTS = [
     "Freelance",
     ["Landing Page", "UI", "tailwindcss", "javascript", "html", "css", "gsap", "scrolltrigger"],
     "./assets/images/devero.jpeg",
-    "./Devvero%20-%20Hire%20Global%20Developers,%20Or%20Become%20One%20-%20Google%20Chrome%202026-02-24%2009-43-32.mp4",
+    "https://www.linkedin.com/feed/update/urn:li:activity:7442203757192548352/",
   ],
   [
     "fjstopografia",
@@ -47,7 +47,7 @@ const PROJECTS = [
     "completo",
     ["full stack", "node.js", "mongodb", "javascript"],
     "./assets/images/posto.png",
-    "./video-posto.mp4",
+    "https://www.youtube.com/watch?v=9zFzS9nHbZU",
   ],
   [
     "Sistema de Vendas",
@@ -55,7 +55,7 @@ const PROJECTS = [
     "Completo",
     ["full stack", "node.js", "mongodb", "javascript"],
     "./assets/images/venda.png",
-    "./video-theze.mp4",
+    "https://www.youtube.com/watch?v=skiS8TAx6zA",
   ],
   [
     "pg flow",
@@ -208,6 +208,24 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+function getAbsoluteTop(el) {
+  let top = 0;
+  let node = el;
+  while (node) {
+    top += node.offsetTop || 0;
+    node = node.offsetParent;
+  }
+  return top;
+}
+
+function getHashScrollTop(target, headerOffset) {
+  const rawScrollMarginTop = window.getComputedStyle(target).scrollMarginTop || "0";
+  const scrollMarginTop = Number.parseFloat(rawScrollMarginTop) || 0;
+  const offset = Math.max(headerOffset, scrollMarginTop);
+  const absoluteTop = target.getBoundingClientRect().top + window.scrollY;
+  return Math.max(0, absoluteTop - offset);
+}
+
 // —— 1. Menu: acessibilidade, scroll lock, burger GSAP, parallax galerias, hovers ——
 function setupMenu(reduceMotion) {
   const btn = document.getElementById("menu-toggle");
@@ -333,13 +351,16 @@ function setupMenu(reduceMotion) {
   const onToggle = () => setOpen(!overlay.classList.contains("open"));
   btn.addEventListener("click", onToggle);
 
-  const scrollToHashTarget = (hash) => {
+  const scrollToHashTarget = (hash, updateUrl = false) => {
     if (!hash || !hash.startsWith("#")) return;
     const target = document.querySelector(hash);
     if (!target) return;
     const header = document.querySelector(".header");
     const headerOffset = header ? header.offsetHeight + 10 : 0;
-    const top = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+    const top = getHashScrollTop(target, headerOffset);
+    if (updateUrl && window.location.hash !== hash) {
+      history.pushState(null, "", hash);
+    }
     window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   };
 
@@ -350,7 +371,7 @@ function setupMenu(reduceMotion) {
     if (hash) {
       e.preventDefault();
       activateMenuLink(hash);
-      scrollToHashTarget(hash);
+      scrollToHashTarget(hash, true);
     }
   };
   navLinks.forEach((link) => link.addEventListener("click", onMenuLinkClick));
@@ -434,7 +455,17 @@ function setupMenu(reduceMotion) {
 const HERO_NS = "http://www.w3.org/2000/svg";
 const NUM_AUTO_BLOBS = 25;
 const HERO_BLOB_SIZE = 140;
+const HERO_BLOB_MIN = 72;
+const HERO_BLOB_MAX = 192;
 const HERO_PARALLAX = 3;
+const HERO_BASE_IMAGE_RATIO = 511 / 458;
+const HERO_REVEAL_IMAGE_RATIO = 472 / 529;
+const HERO_BASE_VISIBLE_TOP_RATIO = 65 / 458;
+const HERO_REVEAL_VISIBLE_TOP_RATIO = 19 / 529;
+const HERO_REVEAL_HEIGHT_RATIO = 0.6;
+const HERO_CURSOR_BLOB_SCALE = 1.12;
+const HERO_AUTO_BLOB_SCALE = 1.12;
+const HERO_CURSOR_ORGANIC_OFFSET = 0.16;
 
 function spring2DCreate(stiffness, damping) {
   let x = 0;
@@ -460,6 +491,30 @@ function spring2DCreate(stiffness, damping) {
   };
 }
 
+function getContainBox(containerWidth, containerHeight, assetRatio) {
+  const containerRatio = containerWidth / Math.max(1, containerHeight);
+
+  if (containerRatio > assetRatio) {
+    const height = containerHeight;
+    const width = height * assetRatio;
+    return {
+      width,
+      height,
+      x: (containerWidth - width) * 0.5,
+      y: 0,
+    };
+  }
+
+  const width = containerWidth;
+  const height = width / assetRatio;
+  return {
+    width,
+    height,
+    x: 0,
+    y: containerHeight - height,
+  };
+}
+
 function setupHeroBlobMask(reduceMotion) {
   const stage = document.getElementById("hero-stage");
   const base = document.getElementById("hero-base");
@@ -478,8 +533,8 @@ function setupHeroBlobMask(reduceMotion) {
   }
 
   const parallaxStrength = HERO_PARALLAX;
-  const blobSize = HERO_BLOB_SIZE;
-  const wobbleR = blobSize * 0.35;
+  let blobSize = HERO_BLOB_SIZE;
+  let wobbleR = blobSize * 0.35;
 
   const head = spring2DCreate(250, 30);
   const body1 = spring2DCreate(220, 34);
@@ -506,15 +561,46 @@ function setupHeroBlobMask(reduceMotion) {
     return c;
   };
 
-  const rSat = blobSize * 0.6;
-  const rHead = blobSize * 0.8;
-  const rB1 = blobSize * 0.6;
-  const rB2 = blobSize * 0.45;
+  const setCircleRadius = (circle, radius) => {
+    circle.setAttribute("r", String(radius));
+  };
 
-  const cSat = mkCircle(cursorG, rSat);
-  const cHead = mkCircle(cursorG, rHead);
-  const cBody1 = mkCircle(cursorG, rB1);
-  const cBody2 = mkCircle(cursorG, rB2);
+  const syncRevealFrame = () => {
+    const stageRect = stage.getBoundingClientRect();
+    const baseBox = getContainBox(stageRect.width, stageRect.height, HERO_BASE_IMAGE_RATIO);
+    const revealHeight = baseBox.height * HERO_REVEAL_HEIGHT_RATIO;
+    const revealWidth = revealHeight * HERO_REVEAL_IMAGE_RATIO;
+    const revealLeft = baseBox.x + (baseBox.width - revealWidth) * 0.5;
+    const revealTopRatio = HERO_BASE_VISIBLE_TOP_RATIO - HERO_REVEAL_VISIBLE_TOP_RATIO * HERO_REVEAL_HEIGHT_RATIO;
+    const revealTop = baseBox.y + baseBox.height * revealTopRatio;
+
+    reveal.style.setProperty("--hero-reveal-width", `${revealWidth}px`);
+    reveal.style.setProperty("--hero-reveal-height", `${revealHeight}px`);
+    reveal.style.setProperty("--hero-reveal-left", `${revealLeft}px`);
+    reveal.style.setProperty("--hero-reveal-top", `${revealTop}px`);
+  };
+
+  const updateBlobScale = () => {
+    const revealRect = reveal.getBoundingClientRect();
+    const referenceSize = Math.max(1, Math.min(revealRect.width, revealRect.height));
+    blobSize = gsap.utils.clamp(HERO_BLOB_MIN, HERO_BLOB_MAX, referenceSize * 0.22);
+    wobbleR = blobSize * 0.35;
+  };
+
+  syncRevealFrame();
+  updateBlobScale();
+
+  const rSat = () => blobSize * 0.6;
+  const rHead = () => blobSize * 0.8;
+  const rB1 = () => blobSize * 0.6;
+  const rB2 = () => blobSize * 0.45;
+
+  const cSat = mkCircle(cursorG, rSat() * HERO_CURSOR_BLOB_SCALE);
+  const cHead = mkCircle(cursorG, rHead() * HERO_CURSOR_BLOB_SCALE);
+  const cBody1 = mkCircle(cursorG, rB1() * HERO_CURSOR_BLOB_SCALE);
+  const cBody2 = mkCircle(cursorG, rB2() * HERO_CURSOR_BLOB_SCALE);
+  const cTemple = mkCircle(cursorG, rB2() * 0.72 * HERO_CURSOR_BLOB_SCALE);
+  const cJaw = mkCircle(cursorG, rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE);
 
   const autoState = [];
   for (let i = 0; i < NUM_AUTO_BLOBS; i += 1) {
@@ -523,9 +609,9 @@ function setupHeroBlobMask(reduceMotion) {
       phaseY: Math.random() * Math.PI * 2,
       speedX: 0.0005 + Math.random() * 0.0005,
       speedY: 0.0003 + Math.random() * 0.0005,
-      sat: mkCircle(autoG, rSat),
-      mainL: mkCircle(autoG, rHead),
-      mainS: mkCircle(autoG, rB2),
+      sat: mkCircle(autoG, rSat() * HERO_AUTO_BLOB_SCALE),
+      mainL: mkCircle(autoG, rHead() * HERO_AUTO_BLOB_SCALE),
+      mainS: mkCircle(autoG, rB2() * HERO_AUTO_BLOB_SCALE),
     });
   }
 
@@ -607,6 +693,8 @@ function setupHeroBlobMask(reduceMotion) {
       const p1 = toLocal(headP.x, headP.y);
       const p2 = toLocal(b1.x, b1.y);
       const p3 = toLocal(b2.x, b2.y);
+      const organicOffsetX = blobSize * HERO_CURSOR_ORGANIC_OFFSET;
+      const organicOffsetY = blobSize * (HERO_CURSOR_ORGANIC_OFFSET * 0.85);
       cSat.setAttribute("cx", String(p0.x));
       cSat.setAttribute("cy", String(p0.y));
       cHead.setAttribute("cx", String(p1.x));
@@ -615,6 +703,10 @@ function setupHeroBlobMask(reduceMotion) {
       cBody1.setAttribute("cy", String(p2.y));
       cBody2.setAttribute("cx", String(p3.x));
       cBody2.setAttribute("cy", String(p3.y));
+      cTemple.setAttribute("cx", String(p1.x + organicOffsetX));
+      cTemple.setAttribute("cy", String(p1.y - organicOffsetY));
+      cJaw.setAttribute("cx", String(p3.x - organicOffsetX * 0.6));
+      cJaw.setAttribute("cy", String(p3.y + organicOffsetY * 0.9));
     } else {
       cursorG.setAttribute("opacity", "0");
     }
@@ -647,6 +739,19 @@ function setupHeroBlobMask(reduceMotion) {
       cursorG.setAttribute("opacity", "0");
       return;
     }
+    syncRevealFrame();
+    updateBlobScale();
+    setCircleRadius(cSat, rSat() * HERO_CURSOR_BLOB_SCALE);
+    setCircleRadius(cHead, rHead() * HERO_CURSOR_BLOB_SCALE);
+    setCircleRadius(cBody1, rB1() * HERO_CURSOR_BLOB_SCALE);
+    setCircleRadius(cBody2, rB2() * HERO_CURSOR_BLOB_SCALE);
+    setCircleRadius(cTemple, rB2() * 0.72 * HERO_CURSOR_BLOB_SCALE);
+    setCircleRadius(cJaw, rB2() * 0.58 * HERO_CURSOR_BLOB_SCALE);
+    autoState.forEach((blob) => {
+      setCircleRadius(blob.sat, rSat() * HERO_AUTO_BLOB_SCALE);
+      setCircleRadius(blob.mainL, rHead() * HERO_AUTO_BLOB_SCALE);
+      setCircleRadius(blob.mainS, rB2() * HERO_AUTO_BLOB_SCALE);
+    });
     head.reset(mouseTx, mouseTy);
     body1.reset(mouseTx, mouseTy);
     body2.reset(mouseTx, mouseTy);
@@ -676,61 +781,6 @@ function setupHeroBlobMask(reduceMotion) {
     cursorG.remove();
     autoG.remove();
     gsap.set([base, reveal], { clearProps: "transform" });
-  };
-}
-
-function setupHeroProfileCard(reduceMotion) {
-  const card = document.getElementById("hero-profile-card");
-  const hero = document.getElementById("hero");
-  if (!card || !hero) return () => {};
-
-  if (!reduceMotion) {
-    gsap.from(card, {
-      y: 26,
-      autoAlpha: 0,
-      duration: 0.82,
-      delay: 0.16,
-      ease: "power3.out",
-    });
-  }
-
-  if (reduceMotion) return () => {};
-
-  const rotateXTo = gsap.quickTo(card, "rotationX", { duration: 0.3, ease: "power3.out" });
-  const rotateYTo = gsap.quickTo(card, "rotationY", { duration: 0.3, ease: "power3.out" });
-  const xTo = gsap.quickTo(card, "x", { duration: 0.35, ease: "power3.out" });
-  const yTo = gsap.quickTo(card, "y", { duration: 0.35, ease: "power3.out" });
-
-  const onMove = (e) => {
-    const rect = card.getBoundingClientRect();
-    if (
-      e.clientX < rect.left ||
-      e.clientX > rect.right ||
-      e.clientY < rect.top ||
-      e.clientY > rect.bottom
-    ) return;
-    const px = (e.clientX - rect.left) / rect.width - 0.5;
-    const py = (e.clientY - rect.top) / rect.height - 0.5;
-    rotateXTo(-py * 6);
-    rotateYTo(px * 8);
-    xTo(px * 4);
-    yTo(py * 4);
-  };
-
-  const onLeave = () => {
-    rotateXTo(0);
-    rotateYTo(0);
-    xTo(0);
-    yTo(0);
-  };
-
-  hero.addEventListener("mousemove", onMove);
-  hero.addEventListener("mouseleave", onLeave);
-
-  return () => {
-    hero.removeEventListener("mousemove", onMove);
-    hero.removeEventListener("mouseleave", onLeave);
-    gsap.set(card, { clearProps: "transform,opacity" });
   };
 }
 
@@ -1383,19 +1433,24 @@ function setupContatoLandoReplica(reduceMotion) {
     });
   };
 
-  const scrollToHashTarget = (hash) => {
+  const scrollToHashTarget = (hash, updateUrl = false) => {
     if (!hash || !hash.startsWith("#")) return;
     const target = document.querySelector(hash);
     if (!target) return;
     const header = document.querySelector(".header");
     const headerOffset = header ? header.offsetHeight + 10 : 0;
-    const top = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+    const top = getHashScrollTop(target, headerOffset);
+    if (updateUrl && window.location.hash !== hash) {
+      history.pushState(null, "", hash);
+    }
     window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   };
 
   const updateActivePageFromViewport = () => {
     if (!pageLinks.length) return;
-    const viewportMid = window.innerHeight * 0.36;
+    const header = document.querySelector(".header");
+    const headerOffset = header ? header.offsetHeight + 10 : 0;
+    const probeY = window.scrollY + headerOffset + window.innerHeight * 0.35;
     let bestHash = null;
     let bestDistance = Number.POSITIVE_INFINITY;
 
@@ -1404,8 +1459,18 @@ function setupContatoLandoReplica(reduceMotion) {
       const section = hash ? document.querySelector(hash) : null;
       if (!section) return;
       const rect = section.getBoundingClientRect();
-      const distance = Math.abs(rect.top - viewportMid);
-      if (distance < bestDistance) {
+      const top = rect.top + window.scrollY;
+      const bottom = top + Math.max(1, rect.height);
+
+      if (probeY >= top && probeY < bottom) {
+        bestHash = hash;
+        bestDistance = 0;
+        return;
+      }
+
+      const center = top + rect.height * 0.5;
+      const distance = Math.abs(center - probeY);
+      if (bestDistance !== 0 && distance < bestDistance) {
         bestDistance = distance;
         bestHash = hash;
       }
@@ -1421,17 +1486,23 @@ function setupContatoLandoReplica(reduceMotion) {
       if (!hash) return;
       e.preventDefault();
       activatePageLink(hash);
-      scrollToHashTarget(hash);
+      scrollToHashTarget(hash, true);
     };
 
     pageLinks.forEach((link) => link.addEventListener("click", onPageLinkClick));
     const onScroll = () => updateActivePageFromViewport();
+    const onResize = () => updateActivePageFromViewport();
+    const onHashChange = () => updateActivePageFromViewport();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    window.addEventListener("hashchange", onHashChange);
     updateActivePageFromViewport();
 
     cleanups.push(() => {
       pageLinks.forEach((link) => link.removeEventListener("click", onPageLinkClick));
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("hashchange", onHashChange);
     });
   }
 
@@ -1699,7 +1770,8 @@ function setupHelmets(reduceMotion) {
   const grid = document.getElementById("helmet-grid");
   const preloader = document.getElementById("helmets-preloader");
   const section = document.getElementById("lab");
-  if (!grid) return () => {};
+  // Evita requests desnecessarias de imagens quando a secao Lab esta desativada.
+  if (!grid || !section || section.hasAttribute("hidden")) return () => {};
 
   const cards = [];
   LAB_ITEMS.forEach((helmet, idx) => {
@@ -1857,7 +1929,6 @@ function main() {
   const ctx = gsap.context(() => {
     disposers.push(setupMenu(reduceMotion));
     disposers.push(setupHeroBlobMask(reduceMotion));
-    disposers.push(setupHeroProfileCard(reduceMotion));
     disposers.push(setupPerspectiveHoverCards(reduceMotion));
     disposers.push(setupPageIntroOutro(reduceMotion));
     disposers.push(setupScrollProgress(reduceMotion, depthState));
@@ -1875,7 +1946,10 @@ function main() {
     disposers.push(setupStackGradientBars(reduceMotion));
     disposers.push(setupPartnersMarquee(reduceMotion));
     disposers.push(setupTrajetoriaExpansion(reduceMotion));
-    disposers.push(setupHelmets(reduceMotion));
+    const labSection = document.getElementById("lab");
+    if (labSection && !labSection.hasAttribute("hidden")) {
+      disposers.push(setupHelmets(reduceMotion));
+    }
     disposers.push(initThreeBg(reduceMotion, depthState));
   }, document.body);
 

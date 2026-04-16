@@ -5,9 +5,10 @@
   --beige: #b9bbad;
   --default: #d2ff00;
   --ease-out-expo: cubic-bezier(0.23, 0.98, 0.35, 0.99);
-  --helmet-inset: 90px 0 0;
-  --helmet-width: 100%;
-  --helmet-height: 345px;
+  --hero-reveal-top: 90px;
+  --hero-reveal-left: 50%;
+  --hero-reveal-width: 345px;
+  --hero-reveal-height: 345px;
   --scroll: 0;
   --surface: #101210;
   --surface-2: #161816;
@@ -460,6 +461,14 @@ body.header-scrolled .burger-line {
   margin-top: clamp(12px, 2.4vh, 34px);
 }
 
+.menu-shell__meta {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  gap: clamp(28px, 4vh, 44px);
+}
+
 .menu-shell__links {
   list-style: none;
   margin: 0;
@@ -470,14 +479,38 @@ body.header-scrolled .burger-line {
   gap: clamp(10px, 1.6vh, 24px);
 }
 
+.menu-shell__social-block {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+  padding-top: clamp(18px, 2.8vh, 28px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.menu-shell__social-label {
+  margin: 0;
+  color: rgba(224, 224, 224, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 0.58rem;
+  font-weight: 760;
+}
+
 .menu-shell__socials {
-  display: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px 14px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .menu-shell__socials a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 0 3px;
   text-decoration: none;
   color: #d5ddc4;
   text-transform: uppercase;
@@ -569,70 +602,6 @@ body.header-scrolled .burger-line {
   padding: 0 0.15em;
 }
 
-/* —— Hero (alinhado ao hero-section Next + globals) —— */
-@media (min-width: 1024px) and (min-height: 640px) {
-  :root {
-    --helmet-inset: 90px 0 0;
-    --helmet-height: 400px;
-  }
-}
-
-@media (min-width: 1024px) and (min-height: 720px) {
-  :root {
-    --helmet-inset: 120px 0 0;
-    --helmet-height: 430px;
-  }
-}
-
-@media (min-width: 1024px) and (min-height: 800px) {
-  :root {
-    --helmet-inset: 130px 0 0;
-    --helmet-height: 480px;
-  }
-}
-
-@media (min-width: 1024px) and (min-height: 900px) {
-  :root {
-    --helmet-inset: 150px 0 0;
-    --helmet-height: 535px;
-  }
-}
-
-@media (min-width: 1280px) and (min-height: 800px) {
-  :root {
-    --helmet-inset: 140px 0 0;
-    --helmet-height: 540px;
-  }
-}
-
-@media (min-width: 1280px) and (min-height: 900px) {
-  :root {
-    --helmet-inset: 150px 0 0;
-    --helmet-height: 575px;
-  }
-}
-
-@media (min-width: 1536px) and (min-height: 900px) {
-  :root {
-    --helmet-inset: 170px 0 0;
-    --helmet-height: 650px;
-  }
-}
-
-@media (min-width: 1536px) and (min-height: 1024px) {
-  :root {
-    --helmet-inset: 190px 0 0;
-    --helmet-height: 715px;
-  }
-}
-
-@media (min-width: 1920px) and (min-height: 1080px) {
-  :root {
-    --helmet-inset: 220px 0 0;
-    --helmet-height: 875px;
-  }
-}
-
 .hero {
   height: 100vh;
   height: 100dvh;
@@ -668,133 +637,6 @@ body.header-scrolled .burger-line {
   user-select: none;
 }
 
-.hero-profile-card {
-  position: absolute;
-  left: 0;
-  top: clamp(108px, 19vh, 210px);
-  bottom: auto;
-  width: clamp(206px, 16vw, 250px);
-  min-height: clamp(410px, 56vh, 560px);
-  padding: 22px 14px 18px 24px;
-  border-top: 1px solid rgba(210, 255, 0, 0.3);
-  border-right: 1px solid rgba(210, 255, 0, 0.3);
-  border-bottom: 1px solid rgba(210, 255, 0, 0.3);
-  border-left: 0;
-  border-radius: 0 12px 12px 0;
-  backdrop-filter: blur(18px) saturate(125%);
-  -webkit-backdrop-filter: blur(18px) saturate(125%);
-  background: linear-gradient(145deg, rgba(8, 8, 8, 0.32), rgba(18, 20, 16, 0.2));
-  box-shadow: 16px 22px 56px rgba(0, 0, 0, 0.44);
-  z-index: 25;
-  transform-style: preserve-3d;
-  will-change: transform, opacity;
-  display: grid;
-  align-content: start;
-}
-
-.hero-profile-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(210, 255, 0, 0.12), transparent 16%);
-  pointer-events: none;
-}
-
-.hero-profile-card::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 16px;
-  bottom: 16px;
-  width: 3px;
-  background: linear-gradient(180deg, var(--default), rgba(210, 255, 0, 0.2));
-}
-
-.hero-profile-kicker {
-  margin: 0 0 8px;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-weight: 800;
-  color: var(--beige);
-}
-
-.hero-profile-name {
-  margin: 0;
-  font-family: BungeeCustom, monospace;
-  font-size: clamp(1.6rem, 3.2vw, 2.3rem);
-  letter-spacing: -0.03em;
-  color: var(--default);
-  line-height: 1;
-}
-
-.hero-profile-role {
-  margin: 6px 0 2px;
-  font-size: 0.92rem;
-  text-transform: uppercase;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.hero-profile-age {
-  margin: 0 0 14px;
-  font-size: 0.88rem;
-  color: #c2c8b5;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-}
-
-.hero-profile-socials {
-  list-style: none;
-  margin: auto 0 0;
-  padding: 14px 0 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.11);
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-}
-
-.hero-profile-socials a {
-  position: relative;
-  display: inline-block;
-  color: #f5f8ef;
-  text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  font-size: 0.72rem;
-  font-weight: 800;
-  transition: color 0.25s ease, transform 0.25s ease;
-}
-
-.hero-profile-socials a::after {
-  content: "";
-  display: block;
-  width: 100%;
-  height: 1px;
-  margin-top: 3px;
-  background: rgba(210, 255, 0, 0.6);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.32s var(--ease-out-expo);
-}
-
-.hero-profile-socials a:hover,
-.hero-profile-socials a:focus-visible {
-  color: var(--default);
-  transform: translateX(2px);
-}
-
-.hero-profile-socials a:hover::after,
-.hero-profile-socials a:focus-visible::after {
-  transform: scaleX(1);
-}
-
-.hero-profile-socials a:focus-visible {
-  outline: 2px solid var(--default);
-  outline-offset: 4px;
-}
-
 .hero-defs {
   position: absolute;
   width: 0;
@@ -816,9 +658,10 @@ body.header-scrolled .burger-line {
 .hero-reveal-layer {
   display: none;
   position: absolute;
-  width: var(--helmet-width);
-  height: var(--helmet-height);
-  inset: var(--helmet-inset);
+  top: var(--hero-reveal-top);
+  left: var(--hero-reveal-left);
+  width: var(--hero-reveal-width);
+  height: var(--hero-reveal-height);
   background-image: url("./assets/images/hero/Gemini_Generated_Image_glnrcoglnrcoglnr-removebg-preview.png");
   background-repeat: no-repeat;
   background-position: center bottom;
@@ -3358,13 +3201,22 @@ body.menu-open {
     padding: 0.08em 0;
   }
 
+  .menu-shell__meta {
+    gap: 22px;
+  }
+
+  .menu-shell__social-block {
+    justify-items: start;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(217, 255, 0, 0.16);
+  }
+
   .menu-shell__socials {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
     gap: 12px 14px;
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid rgba(217, 255, 0, 0.16);
   }
 
   .menu-shell__badge {
@@ -3574,22 +3426,6 @@ body.menu-open {
     min-height: 112px;
   }
 
-  .hero-profile-card {
-    left: 12px;
-    top: auto;
-    width: auto;
-    bottom: 14px;
-    min-height: 0;
-    border-left: 1px solid rgba(210, 255, 0, 0.3);
-    border-radius: 8px;
-    padding: 14px 14px 12px;
-    background: linear-gradient(145deg, rgba(8, 8, 8, 0.62), rgba(18, 20, 16, 0.45));
-  }
-
-  .hero-profile-age {
-    margin-bottom: 0;
-  }
-
   .trajetoria-expansion__frame-wrap {
     min-height: 100vh;
     min-height: 100dvh;
@@ -3616,10 +3452,6 @@ body.menu-open {
     border-radius: 0;
     max-width: 100vw;
     max-height: 100dvh;
-  }
-
-  .hero-profile-socials {
-    display: none;
   }
 
   .section-stack .marquee--framed {
@@ -3652,22 +3484,6 @@ body.menu-open {
     left: 14px;
     font-size: 0.92rem;
     letter-spacing: 0.07em;
-  }
-
-  .hero-profile-card {
-    width: min(270px, calc(100% - 24px));
-    right: auto;
-    left: 12px;
-    bottom: 12px;
-    border-radius: 10px;
-    min-height: auto;
-    padding: 12px 12px 10px;
-  }
-
-  .hero-profile-role,
-  .hero-profile-age {
-    font-size: 0.8rem;
-    letter-spacing: 0.06em;
   }
 
   .trajetoria-expansion__story {
@@ -3732,10 +3548,6 @@ body.menu-open {
 
   tbody tr {
     transition: none;
-  }
-
-  .hero-profile-card {
-    transform: none !important;
   }
 
   .section-stack .brand-chip:hover {
