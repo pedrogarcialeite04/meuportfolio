@@ -1636,6 +1636,17 @@ body.hero-scroll-locked {
   right: clamp(16px, 5vw, 10%);
 }
 
+.ln-footer-links--contacts-only {
+  left: auto;
+  right: clamp(14px, 6vw, 90px);
+  top: 58%;
+  transform: translateY(-58%);
+}
+
+.ln-footer-links--contacts-only .ln-links-label {
+  text-align: center;
+}
+
 .ln-links-label {
   margin: 0 0 12px;
   text-align: center;
@@ -1704,6 +1715,59 @@ body.hero-scroll-locked {
 .ln-footer-links .menu-link:focus-visible {
   outline: 2px solid #d2ff00;
   outline-offset: 4px;
+}
+
+.ln-contact-icons {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.ln-contact-icons .menu-item {
+  overflow: visible;
+  font-size: 0;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ln-footer-links .ln-contact-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(7, 9, 6, 0.52);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  transition:
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    color 0.22s ease;
+}
+
+.ln-footer-links .ln-contact-icon svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
+.ln-footer-links .ln-contact-icon__img {
+  width: 26px;
+  height: 26px;
+  display: block;
+  object-fit: contain;
+}
+
+.ln-footer-links .ln-contact-icon:hover,
+.ln-footer-links .ln-contact-icon:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(210, 255, 0, 0.75);
+  background: rgba(210, 255, 0, 0.12);
+  color: #d2ff00;
 }
 
 .ln-footer-marquee-wrap {
@@ -3918,6 +3982,19 @@ body.menu-open {
     right: auto;
   }
 
+  .ln-footer-links--contacts-only {
+    left: auto;
+    right: auto;
+    top: auto;
+    transform: none;
+    margin: 2px auto 0;
+    width: fit-content;
+  }
+
+  .ln-footer-links--contacts-only .ln-links-label {
+    text-align: center;
+  }
+
   .ln-links-label {
     margin-bottom: 8px;
     font-size: 0.62rem;
@@ -3942,6 +4019,30 @@ body.menu-open {
 
   .ln-footer-links .menu-link {
     padding: 3px 0;
+  }
+
+  .ln-contact-icons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .ln-footer-links .ln-contact-icon {
+    width: 100%;
+    max-width: 56px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    margin-inline: auto;
+  }
+
+  .ln-footer-links .ln-contact-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .ln-footer-links .ln-contact-icon__img {
+    width: 24px;
+    height: 24px;
   }
 
   .ln-footer-links .menu-text--accent,
