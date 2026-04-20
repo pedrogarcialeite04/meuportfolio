@@ -550,6 +550,10 @@ function setupHeroBlobMask(reduceMotion) {
 
   const mqDesktop = window.matchMedia("(min-width: 1024px)");
   const mqTablet = window.matchMedia("(min-width: 768px)");
+  const mqNarrow = window.matchMedia("(max-width: 420px)");
+  const heroSection = document.getElementById("hero");
+  const lockBtn = document.getElementById("hero-mask-scroll-lock");
+  const lockLabel = lockBtn?.querySelector(".hero-mask-lock__text");
 
   if (reduceMotion) {
     reveal.style.maskImage = "none";
@@ -627,6 +631,13 @@ function setupHeroBlobMask(reduceMotion) {
   let mouseTy = 0;
   let isInside = false;
   let activePointerId = null;
+  let scrollLocked = false;
+  let savedScrollY = 0;
+  let lastStageW = -1;
+  let lastStageH = -1;
+  let layoutRaf = 0;
+  let heroInView = true;
+  let scrollSyncRaf = 0;
 
   const useSvgMaskDom = maskMode === "svg";
   const cursorG = useSvgMaskDom ? document.createElementNS(HERO_NS, "g") : null;
@@ -760,6 +771,11 @@ function setupHeroBlobMask(reduceMotion) {
   const onPointerDown = (e) => {
     if (e.pointerType === "mouse") return;
     activePointerId = e.pointerId;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {
+      /* ignore */
+    }
     updatePointerTarget(e.clientX, e.clientY);
   };
 
@@ -772,6 +788,11 @@ function setupHeroBlobMask(reduceMotion) {
   const onPointerUp = (e) => {
     if (e.pointerType === "mouse") return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (_) {
+      /* ignore */
+    }
     activePointerId = null;
     isInside = false;
     ratioTx = 0;
@@ -800,9 +821,15 @@ function setupHeroBlobMask(reduceMotion) {
   let raf = 0;
   let prevMs = performance.now();
   let lastGradientMask = "";
+  let gradientFrameSkip = 0;
   const tick = (tMs) => {
     const dt = Math.min(0.045, Math.max(1 / 240, (tMs - prevMs) / 1000));
     prevMs = tMs;
+
+    if (!heroInView) {
+      raf = requestAnimationFrame(tick);
+      return;
+    }
 
     const cRect = stage.getBoundingClientRect();
     const rRect = reveal.getBoundingClientRect();
@@ -906,8 +933,16 @@ function setupHeroBlobMask(reduceMotion) {
     if (maskMode === "gradient") {
       const maskValue = gradientLayers.length ? gradientLayers.join(",") : "none";
       if (maskValue !== lastGradientMask) {
-        lastGradientMask = maskValue;
-        setMaskImageValue(maskValue);
+        if (prefersCoarsePointer) {
+          gradientFrameSkip += 1;
+          if (gradientFrameSkip % 2 === 0) {
+            lastGradientMask = maskValue;
+            setMaskImageValue(maskValue);
+          }
+        } else {
+          lastGradientMask = maskValue;
+          setMaskImageValue(maskValue);
+        }
       }
     } else if (maskMode === "clip") {
       const clipRadius = Math.max(36, blobSize * 0.9);
@@ -943,7 +978,142 @@ function setupHeroBlobMask(reduceMotion) {
     body2.reset(mouseTx, mouseTy);
     ratioSpring.reset(0, 0);
     syncMaskExtents();
+    lastStageW = cRect.width;
+    lastStageH = cRect.height;
   };
+
+  const scheduleLayout = () => {
+    if (layoutRaf) return;
+    layoutRaf = requestAnimationFrame(() => {
+      layoutRaf = 0;
+      refreshHeroLayout();
+    });
+  };
+
+  const refreshHeroLayout = () => {
+    const r = stage.getBoundingClientRect();
+    const w = r.width;
+    const h = r.height;
+    if (lastStageW < 0) {
+      onResize();
+      return;
+    }
+    if (Math.abs(w - lastStageW) > 0.5 || Math.abs(h - lastStageH) > 0.5) {
+      onResize();
+    }
+  };
+
+  const getLockButtonText = (locked) => {
+    if (mqNarrow.matches) return locked ? "Destravar" : "Travar";
+    return locked ? "Destravar scroll" : "Travar scroll";
+  };
+
+  const syncLockButtonUi = (locked) => {
+    if (lockBtn) {
+      lockBtn.setAttribute("aria-pressed", locked ? "true" : "false");
+      if (lockLabel) {
+        lockLabel.textContent = getLockButtonText(locked);
+      }
+      lockBtn.setAttribute(
+        "aria-label",
+        locked
+          ? "Destravar o scroll da página"
+          : "Travar o scroll da página para mover a máscara com precisão",
+      );
+    }
+  };
+
+  const setScrollLocked = (locked) => {
+    if (locked && document.body.classList.contains("menu-open")) return;
+    scrollLocked = locked;
+    syncLockButtonUi(locked);
+    document.body.classList.toggle("hero-scroll-locked", locked);
+    if (locked) {
+      savedScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${savedScrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+    } else {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      window.scrollTo(0, savedScrollY);
+    }
+    requestAnimationFrame(() => {
+      scheduleLayout();
+      if (typeof ScrollTrigger !== "undefined") {
+        ScrollTrigger.refresh();
+      }
+    });
+  };
+
+  const onLockToggle = () => {
+    setScrollLocked(!scrollLocked);
+  };
+
+  const onWinScrollSync = () => {
+    if (scrollLocked) return;
+    if (scrollSyncRaf) return;
+    scrollSyncRaf = requestAnimationFrame(() => {
+      scrollSyncRaf = 0;
+      scheduleLayout();
+    });
+  };
+
+  const onEscapeUnlock = (event) => {
+    if (event.key === "Escape" && scrollLocked) {
+      setScrollLocked(false);
+    }
+  };
+
+  const onNavClickUnlock = (event) => {
+    const anchor = event.target.closest ? event.target.closest("a[href^='#']") : null;
+    if (anchor && scrollLocked) {
+      setScrollLocked(false);
+    }
+  };
+
+  const onNarrowChange = () => {
+    syncLockButtonUi(scrollLocked);
+  };
+
+  const onOrientationChange = () => {
+    scheduleLayout();
+    requestAnimationFrame(() => scheduleLayout());
+  };
+
+  let heroResizeObserver = null;
+  if (typeof ResizeObserver !== "undefined") {
+    heroResizeObserver = new ResizeObserver(() => scheduleLayout());
+    heroResizeObserver.observe(stage);
+  }
+
+  const vv = window.visualViewport;
+  const onVisualViewportChange = () => scheduleLayout();
+  if (vv) {
+    vv.addEventListener("resize", onVisualViewportChange);
+    vv.addEventListener("scroll", onVisualViewportChange);
+  }
+
+  let heroVisibilityObserver = null;
+  if (heroSection && typeof IntersectionObserver !== "undefined") {
+    heroVisibilityObserver = new IntersectionObserver(
+      (entries) => {
+        const en = entries[0];
+        heroInView = Boolean(en && en.isIntersecting);
+        if (heroInView) {
+          lastGradientMask = "";
+          scheduleLayout();
+        }
+      },
+      { threshold: 0, rootMargin: "60px 0px" },
+    );
+    heroVisibilityObserver.observe(heroSection);
+  }
 
   window.addEventListener("mousemove", onMove);
   if (typeof PointerEvent !== "undefined") {
@@ -957,17 +1127,43 @@ function setupHeroBlobMask(reduceMotion) {
     stage.addEventListener("touchend", onTouchEnd, { passive: true });
     stage.addEventListener("touchcancel", onTouchEnd, { passive: true });
   }
-  window.addEventListener("resize", onResize);
+  window.addEventListener("resize", scheduleLayout);
+  window.addEventListener("scroll", onWinScrollSync, { passive: true });
+  window.addEventListener("orientationchange", onOrientationChange);
+  document.addEventListener("keydown", onEscapeUnlock);
+  document.addEventListener("click", onNavClickUnlock, true);
   if (typeof mqDesktop.addEventListener === "function") {
     mqDesktop.addEventListener("change", onResize);
+    mqTablet.addEventListener("change", onResize);
+    mqNarrow.addEventListener("change", onNarrowChange);
   } else {
     mqDesktop.addListener(onResize);
+    mqTablet.addListener(onResize);
+    mqNarrow.addListener(onNarrowChange);
   }
+  if (lockBtn) {
+    lockBtn.addEventListener("click", onLockToggle);
+  }
+  syncLockButtonUi(false);
   onResize();
   raf = requestAnimationFrame(tick);
 
   return () => {
     cancelAnimationFrame(raf);
+    if (layoutRaf) cancelAnimationFrame(layoutRaf);
+    if (scrollSyncRaf) cancelAnimationFrame(scrollSyncRaf);
+    if (scrollLocked) setScrollLocked(false);
+    heroResizeObserver?.disconnect();
+    if (vv) {
+      vv.removeEventListener("resize", onVisualViewportChange);
+      vv.removeEventListener("scroll", onVisualViewportChange);
+    }
+    window.removeEventListener("scroll", onWinScrollSync);
+    window.removeEventListener("orientationchange", onOrientationChange);
+    document.removeEventListener("keydown", onEscapeUnlock);
+    document.removeEventListener("click", onNavClickUnlock, true);
+    heroVisibilityObserver?.disconnect();
+    lockBtn?.removeEventListener("click", onLockToggle);
     window.removeEventListener("mousemove", onMove);
     if (typeof PointerEvent !== "undefined") {
       stage.removeEventListener("pointerdown", onPointerDown);
@@ -980,11 +1176,15 @@ function setupHeroBlobMask(reduceMotion) {
       stage.removeEventListener("touchend", onTouchEnd);
       stage.removeEventListener("touchcancel", onTouchEnd);
     }
-    window.removeEventListener("resize", onResize);
+    window.removeEventListener("resize", scheduleLayout);
     if (typeof mqDesktop.removeEventListener === "function") {
       mqDesktop.removeEventListener("change", onResize);
+      mqTablet.removeEventListener("change", onResize);
+      mqNarrow.removeEventListener("change", onNarrowChange);
     } else {
       mqDesktop.removeListener(onResize);
+      mqTablet.removeListener(onResize);
+      mqNarrow.removeListener(onNarrowChange);
     }
     cursorG?.remove();
     autoG?.remove();
@@ -2066,13 +2266,15 @@ function initThreeBg(reduceMotion, depthState) {
   const projetosSection = document.getElementById("projetos");
   let projetosThreeTrigger = null;
 
+  const mqMobileThree = window.matchMedia("(max-width: 768px)");
+  const knotSeg = mqMobileThree.matches ? { tubular: 96, radial: 20 } : { tubular: 160, radial: 28 };
   const knot = new THREE.Mesh(
-    new THREE.TorusKnotGeometry(2.15, 0.2, 160, 28),
+    new THREE.TorusKnotGeometry(2.15, 0.2, knotSeg.tubular, knotSeg.radial),
     new THREE.MeshBasicMaterial({ color: 0xd2ff00, wireframe: true }),
   );
   scene.add(knot);
 
-  const n = 600;
+  const n = mqMobileThree.matches ? 320 : 600;
   const positions = new Float32Array(n * 3);
   for (let i = 0; i < n * 3; i += 1) positions[i] = (Math.random() - 0.5) * 22;
   const particlesGeo = new THREE.BufferGeometry();
@@ -2083,17 +2285,22 @@ function initThreeBg(reduceMotion, depthState) {
   );
   scene.add(stars);
 
-  const maxPR = Math.min(window.devicePixelRatio || 1, 2);
   const resize = () => {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    renderer.setPixelRatio(maxPR);
+    const pr = Math.min(window.devicePixelRatio || 1, mqMobileThree.matches ? 1.25 : 2);
+    renderer.setPixelRatio(pr);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   };
   resize();
   window.addEventListener("resize", resize);
+  if (typeof mqMobileThree.addEventListener === "function") {
+    mqMobileThree.addEventListener("change", resize);
+  } else {
+    mqMobileThree.addListener(resize);
+  }
 
   if (projetosSection) {
     const hideThree = () => document.body.classList.add("three-off-projects");
@@ -2110,28 +2317,41 @@ function initThreeBg(reduceMotion, depthState) {
   }
 
   let raf = 0;
+  let threeHidden = document.hidden;
+  const onThreeVisibility = () => {
+    threeHidden = document.hidden;
+  };
+  document.addEventListener("visibilitychange", onThreeVisibility);
   const render = () => {
-    const depth = depthState ? depthState.scrollDepth || 0 : 0;
-    const mix = depthState ? depthState.sectionMix || 0 : 0;
-    const speedBoost = 1 + depth * 1.8 + mix * 0.8;
+    if (!threeHidden) {
+      const depth = depthState ? depthState.scrollDepth || 0 : 0;
+      const mix = depthState ? depthState.sectionMix || 0 : 0;
+      const speedBoost = 1 + depth * 1.8 + mix * 0.8;
 
-    knot.rotation.x += 0.0024 * speedBoost;
-    knot.rotation.y += 0.0031 * speedBoost;
-    knot.rotation.z = Math.sin(performance.now() * 0.00035) * 0.18 * (1 + depth);
-    knot.position.z = -0.4 + depth * 1.15;
-    stars.rotation.y += 0.00022 + depth * 0.0005;
-    stars.rotation.x = Math.sin(performance.now() * 0.00022) * (0.03 + mix * 0.09);
-    stars.material.opacity = 0.72 + depth * 0.25;
-    camera.position.z = 8 - depth * 1.1;
+      knot.rotation.x += 0.0024 * speedBoost;
+      knot.rotation.y += 0.0031 * speedBoost;
+      knot.rotation.z = Math.sin(performance.now() * 0.00035) * 0.18 * (1 + depth);
+      knot.position.z = -0.4 + depth * 1.15;
+      stars.rotation.y += 0.00022 + depth * 0.0005;
+      stars.rotation.x = Math.sin(performance.now() * 0.00022) * (0.03 + mix * 0.09);
+      stars.material.opacity = 0.72 + depth * 0.25;
+      camera.position.z = 8 - depth * 1.1;
 
-    renderer.render(scene, camera);
+      renderer.render(scene, camera);
+    }
     raf = requestAnimationFrame(render);
   };
   raf = requestAnimationFrame(render);
 
   return () => {
     cancelAnimationFrame(raf);
+    document.removeEventListener("visibilitychange", onThreeVisibility);
     window.removeEventListener("resize", resize);
+    if (typeof mqMobileThree.removeEventListener === "function") {
+      mqMobileThree.removeEventListener("change", resize);
+    } else {
+      mqMobileThree.removeListener(resize);
+    }
     if (projetosThreeTrigger) projetosThreeTrigger.kill();
     document.body.classList.remove("three-off-projects");
     particlesGeo.dispose();
