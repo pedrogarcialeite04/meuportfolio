@@ -97,6 +97,14 @@ const PROJECTS = [
     "./assets/images/cheques.png",
     "https://saa-s-cheques.vercel.app/",
   ],
+  [
+    "PratoUp",
+    "2026",
+    "freelance",
+    ["Landing Page", "UI", "javascript", "html", "css", "gsap", "scrolltrigger"],
+    "./assets/images/pratoup.png",
+    "https://pratoup.com.br/",
+  ],
 ];
 
 /** Tags únicas dos freelances, ordem de aparição, com rótulos para o marquee */
