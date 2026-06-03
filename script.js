@@ -1,13 +1,8 @@
-/**
- * Portfolio — página estática
- * Animações: GSAP + ScrollTrigger, Three.js (fundo), interações.
- */
-/* global gsap, ScrollTrigger, THREE */
+
 
 gsap.registerPlugin(ScrollTrigger);
 
-// —— Dados ——
-/** [nome, ano, papel, tags[], imagem de fundo, link] — freelances prestados */
+
 const PROJECTS = [
   [
     "devero",
@@ -16,6 +11,14 @@ const PROJECTS = [
     ["Landing Page", "UI", "tailwindcss", "javascript", "html", "css", "gsap", "scrolltrigger"],
     "./assets/images/devero.jpeg",
     "https://www.linkedin.com/feed/update/urn:li:activity:7442203757192548352/",
+  ],
+  [
+    "museu",
+    "2026",
+    "Completo",
+    ["WebGL", "Three.js", "3D", "javascript", "gsap", "scrolltrigger", "interatividade"],
+    "./assets/images/Captura de Tela (2).png",
+    "https://museupedroca.vercel.app/",
   ],
   [
     "fjstopografia",
