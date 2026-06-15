@@ -9,7 +9,7 @@ const PROJECTS = [
     "2026",
     "Freelance",
     ["Landing Page", "UI", "tailwindcss", "javascript", "html", "css", "gsap", "scrolltrigger"],
-    "./assets/images/devero.jpeg",
+    "./assets/images/devero.webp",
     "https://www.linkedin.com/feed/update/urn:li:activity:7442203757192548352/",
   ],
   [
@@ -17,7 +17,7 @@ const PROJECTS = [
     "2026",
     "Completo",
     ["WebGL", "Three.js", "3D", "javascript", "gsap", "scrolltrigger", "interatividade"],
-    "./assets/images/Captura de Tela (2).png",
+    "./assets/images/Captura de Tela (2).webp",
     "https://museupedroca.vercel.app/",
   ],
   [
@@ -25,7 +25,7 @@ const PROJECTS = [
     "2026",
     "Freelance",
     ["Site", "Responsividade Mobile", "javascript", "html", "css", "gsap", "scrolltrigger", "three.js", "full stack", "node.js", "mongodb"],
-    "./assets/images/topografia.png",
+    "./assets/images/topografia.webp",
     "https://www.fjstopografia.com.br/",
   ],
   [
@@ -33,7 +33,7 @@ const PROJECTS = [
     "2026",
     "Freelance",
     ["Design", "Front-end", "Back-end", "Full Stack", "node.js", "javascript", "three.js", "mongodb", "html", "css", "gsap", "scrolltrigger"],
-    "./assets/images/valquiria.png",
+    "./assets/images/valquiria.webp",
     "https://github.com/pedrogarcialeite04/landingpage-casamento",
   ],
   [
@@ -41,7 +41,7 @@ const PROJECTS = [
     "2025",
     "Freelance",
     ["Landing Page", "javascript", "html", "css", "gsap", "scrolltrigger", "three.js"],
-    "./assets/images/theze.png",
+    "./assets/images/theze.webp",
     "https://thezeagricola.netlify.app/",
   ],
   [
@@ -49,7 +49,7 @@ const PROJECTS = [
     "2025",
     "completo",
     ["full stack", "node.js", "mongodb", "javascript"],
-    "./assets/images/posto.png",
+    "./assets/images/posto.webp",
     "https://www.youtube.com/watch?v=9zFzS9nHbZU",
   ],
   [
@@ -57,7 +57,7 @@ const PROJECTS = [
     "2025",
     "Completo",
     ["full stack", "node.js", "mongodb", "javascript"],
-    "./assets/images/venda.png",
+    "./assets/images/venda.webp",
     "https://www.youtube.com/watch?v=skiS8TAx6zA",
   ],
   [
@@ -65,7 +65,7 @@ const PROJECTS = [
     "2025",
     "completo",
     ["Landing Page", "front-end", "javascript", "gsap", "scrolltrigger"],
-    "./assets/images/pgflow.png",
+    "./assets/images/pgflow.webp",
     "https://pgflow.vercel.app/",
   ],
   [
@@ -73,7 +73,7 @@ const PROJECTS = [
     "2025",
     "completo",
     ["full stack", "node.js", "mongodb", "javascript"],
-    "./assets/images/robo.jpg",
+    "./assets/images/robo.webp",
     "https://registrospedro.netlify.app/",
   ],
   [
@@ -81,7 +81,7 @@ const PROJECTS = [
     "2026",
     "completo",
     ["full stack", "UI", "javascript", "gsap"],
-    "./assets/images/foco.png",
+    "./assets/images/foco.webp",
     "https://foco-rotina.vercel.app/",
   ],
   [
@@ -89,7 +89,7 @@ const PROJECTS = [
     "2026",
     "freelance",
     ["full stack", "node.js", "mongodb", "javascript"],
-    "./assets/images/thegadu.png",
+    "./assets/images/thegadu.webp",
     "https://thegadu.onrender.com/entrada.html",
   ],
   [
@@ -97,7 +97,7 @@ const PROJECTS = [
     "2026",
     "freelance",
     ["full stack", "node.js", "mongodb", "javascript"],
-    "./assets/images/cheques.png",
+    "./assets/images/cheques.webp",
     "https://saa-s-cheques.vercel.app/",
   ],
   [
@@ -105,7 +105,7 @@ const PROJECTS = [
     "2026",
     "freelance",
     ["Landing Page", "UI", "javascript", "html", "css", "gsap", "scrolltrigger"],
-    "./assets/images/pratoup.png",
+    "./assets/images/pratoup.webp",
     "https://pratoup.com.br/",
   ],
 ];
@@ -202,7 +202,7 @@ const TRAJETORIA_EXPANSION_MEDIA = {
   video: {
     src: "./videopg.mp4",
     poster: "",
-    background: "./assets/images/imgfundo.jpeg",
+    background: "./assets/images/imgfundo.webp",
     title: "Minha trajetória",
     date: "Front-end em evolução",
     scrollToExpand: "Role para ampliar",
@@ -2373,6 +2373,388 @@ function initThreeBg(reduceMotion, depthState) {
   };
 }
 
+// —— FX surreais: camadas de fundo, barra de progresso e grão ——
+function setupFxLayers(reduceMotion) {
+  const body = document.body;
+  const created = [];
+
+  const bar = document.createElement("div");
+  bar.className = "fx-scroll-progress";
+  bar.setAttribute("aria-hidden", "true");
+  body.appendChild(bar);
+  created.push(bar);
+
+  // Em reduced-motion o setupScrollProgress não escreve --scroll; garantimos a barra aqui.
+  let onScrollVar = null;
+  if (reduceMotion) {
+    onScrollVar = () => {
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - doc.clientHeight || 1;
+      const p = Math.min(1, Math.max(0, (window.scrollY || 0) / max));
+      doc.style.setProperty("--scroll", p.toFixed(4));
+    };
+    window.addEventListener("scroll", onScrollVar, { passive: true });
+    window.addEventListener("resize", onScrollVar);
+    onScrollVar();
+  } else {
+    // Orbs (blur pesado) e grão animado só no desktop com ponteiro fino: poupa
+    // bateria/GPU em mobile sem remover os efeitos onde fazem diferença.
+    const heavyFxOk =
+      window.matchMedia("(min-width: 768px)").matches &&
+      window.matchMedia("(pointer: fine)").matches;
+
+    if (heavyFxOk) {
+      const grain = document.createElement("div");
+      grain.className = "fx-grain";
+      grain.setAttribute("aria-hidden", "true");
+      body.appendChild(grain);
+      created.push(grain);
+
+      const orbs = document.createElement("div");
+      orbs.className = "fx-orbs";
+      orbs.setAttribute("aria-hidden", "true");
+      orbs.innerHTML =
+        '<span class="fx-orb fx-orb--1"></span><span class="fx-orb fx-orb--2"></span><span class="fx-orb fx-orb--3"></span>';
+      body.appendChild(orbs);
+      created.push(orbs);
+    }
+  }
+
+  return () => {
+    if (onScrollVar) {
+      window.removeEventListener("scroll", onScrollVar);
+      window.removeEventListener("resize", onScrollVar);
+    }
+    created.forEach((el) => el.remove());
+  };
+}
+
+// —— Cursor customizado com follower elástico ——
+function setupCustomCursor(reduceMotion) {
+  if (reduceMotion) return () => {};
+  if (!window.matchMedia("(pointer: fine)").matches) return () => {};
+
+  const dot = document.createElement("div");
+  dot.className = "fx-cursor-dot fx-cursor-hidden";
+  dot.setAttribute("aria-hidden", "true");
+  const ring = document.createElement("div");
+  ring.className = "fx-cursor-ring fx-cursor-hidden";
+  ring.setAttribute("aria-hidden", "true");
+  document.body.append(dot, ring);
+  document.body.classList.add("has-fx-cursor");
+
+  const hoverSel = "a, button, .project-showcase-card, .brand-chip, [data-fx-hover]";
+  let mx = window.innerWidth / 2;
+  let my = window.innerHeight / 2;
+  let rx = mx;
+  let ry = my;
+  let visible = false;
+
+  const onMove = (e) => {
+    mx = e.clientX;
+    my = e.clientY;
+    if (!visible) {
+      visible = true;
+      dot.classList.remove("fx-cursor-hidden");
+      ring.classList.remove("fx-cursor-hidden");
+    }
+    const interactive = e.target && e.target.closest ? e.target.closest(hoverSel) : null;
+    document.body.classList.toggle("fx-cursor-hover", Boolean(interactive));
+  };
+  const onDown = () => document.body.classList.add("fx-cursor-down");
+  const onUp = () => document.body.classList.remove("fx-cursor-down");
+  const onLeave = () => {
+    visible = false;
+    dot.classList.add("fx-cursor-hidden");
+    ring.classList.add("fx-cursor-hidden");
+  };
+
+  window.addEventListener("mousemove", onMove, { passive: true });
+  window.addEventListener("mousedown", onDown);
+  window.addEventListener("mouseup", onUp);
+  document.addEventListener("mouseleave", onLeave);
+
+  let raf = 0;
+  const tick = () => {
+    rx += (mx - rx) * 0.18;
+    ry += (my - ry) * 0.18;
+    dot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
+    ring.style.transform = `translate3d(${rx.toFixed(2)}px, ${ry.toFixed(2)}px, 0) translate(-50%, -50%)`;
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+
+  return () => {
+    cancelAnimationFrame(raf);
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mousedown", onDown);
+    window.removeEventListener("mouseup", onUp);
+    document.removeEventListener("mouseleave", onLeave);
+    document.body.classList.remove("has-fx-cursor", "fx-cursor-hover", "fx-cursor-down");
+    dot.remove();
+    ring.remove();
+  };
+}
+
+// —— Personalização dos cards de projeto: spotlight, tilt 3D, borda, índice ——
+function setupProjectCardFx(reduceMotion) {
+  const cards = Array.from(document.querySelectorAll(".project-showcase-card"));
+  if (!cards.length) return () => {};
+  const finePointer = window.matchMedia("(pointer: fine)").matches;
+  const cleanups = [];
+
+  cards.forEach((card, index) => {
+    if (card.dataset.fxReady === "1") return;
+    card.dataset.fxReady = "1";
+
+    const inner = document.createElement("div");
+    inner.className = "project-card-3d";
+    while (card.firstChild) inner.appendChild(card.firstChild);
+    card.appendChild(inner);
+
+    const spot = document.createElement("span");
+    spot.className = "project-card-spot";
+    spot.setAttribute("aria-hidden", "true");
+
+    const border = document.createElement("span");
+    border.className = "project-card-border";
+    border.setAttribute("aria-hidden", "true");
+
+    const shine = document.createElement("span");
+    shine.className = "project-card-shine";
+    shine.setAttribute("aria-hidden", "true");
+
+    const idx = document.createElement("span");
+    idx.className = "project-card-index";
+    idx.setAttribute("aria-hidden", "true");
+    idx.textContent = String(index + 1).padStart(2, "0");
+
+    inner.append(spot, border, shine, idx);
+
+    if (reduceMotion || !finePointer) return;
+
+    let rafId = 0;
+    let trx = 0;
+    let trY = 0;
+    let crx = 0;
+    let crY = 0;
+    let active = false;
+
+    const loop = () => {
+      crx += (trx - crx) * 0.12;
+      crY += (trY - crY) * 0.12;
+      inner.style.setProperty("--rx", `${crx.toFixed(2)}deg`);
+      inner.style.setProperty("--ry", `${crY.toFixed(2)}deg`);
+      if (active || Math.abs(crx - trx) > 0.02 || Math.abs(crY - trY) > 0.02) {
+        rafId = requestAnimationFrame(loop);
+      } else {
+        inner.style.setProperty("--rx", "0deg");
+        inner.style.setProperty("--ry", "0deg");
+        rafId = 0;
+      }
+    };
+
+    const onMove = (e) => {
+      const rect = card.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const px = (e.clientX - rect.left) / rect.width;
+      const py = (e.clientY - rect.top) / rect.height;
+      spot.style.setProperty("--sx", `${(px * 100).toFixed(1)}%`);
+      spot.style.setProperty("--sy", `${(py * 100).toFixed(1)}%`);
+      trx = (0.5 - py) * 9;
+      trY = (px - 0.5) * 11;
+      active = true;
+      if (!rafId) rafId = requestAnimationFrame(loop);
+    };
+    const onLeave = () => {
+      trx = 0;
+      trY = 0;
+      active = false;
+      if (!rafId) rafId = requestAnimationFrame(loop);
+    };
+
+    card.addEventListener("mousemove", onMove);
+    card.addEventListener("mouseleave", onLeave);
+    cleanups.push(() => {
+      if (rafId) cancelAnimationFrame(rafId);
+      card.removeEventListener("mousemove", onMove);
+      card.removeEventListener("mouseleave", onLeave);
+    });
+  });
+
+  return () => cleanups.forEach((fn) => fn());
+}
+
+// —— Skew por velocidade de scroll (toque Awwwards) na grade de projetos ——
+function setupScrollVelocitySkew(reduceMotion) {
+  if (reduceMotion) return () => {};
+  if (window.matchMedia("(pointer: coarse)").matches) return () => {};
+  const grid = document.querySelector(".project-showcase-grid");
+  if (!grid) return () => {};
+
+  let lastY = window.scrollY || 0;
+  let skew = 0;
+  let target = 0;
+  let rafId = 0;
+
+  const loop = () => {
+    skew += (target - skew) * 0.12;
+    target *= 0.86;
+    grid.style.setProperty("--grid-skew", `${skew.toFixed(3)}deg`);
+    if (Math.abs(skew) > 0.01 || Math.abs(target) > 0.01) {
+      rafId = requestAnimationFrame(loop);
+    } else {
+      grid.style.setProperty("--grid-skew", "0deg");
+      rafId = 0;
+    }
+  };
+  const onScroll = () => {
+    const y = window.scrollY || 0;
+    const v = y - lastY;
+    lastY = y;
+    target = Math.max(-2.4, Math.min(2.4, v * 0.06));
+    if (!rafId) rafId = requestAnimationFrame(loop);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  return () => {
+    window.removeEventListener("scroll", onScroll);
+    if (rafId) cancelAnimationFrame(rafId);
+    grid.style.setProperty("--grid-skew", "0deg");
+  };
+}
+
+// —— Botões magnéticos ——
+function setupMagneticButtons(reduceMotion) {
+  if (reduceMotion) return () => {};
+  if (!window.matchMedia("(pointer: fine)").matches) return () => {};
+  const selector = [
+    "#menu-toggle",
+    ".hero-mask-lock",
+    ".ln-contact-icon",
+    ".footer-cta-action",
+    ".menu-shell__close",
+  ].join(", ");
+  const els = Array.from(document.querySelectorAll(selector));
+  if (!els.length) return () => {};
+
+  const cleanups = [];
+  els.forEach((el) => {
+    el.classList.add("fx-magnetic");
+    const strength = 0.34;
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - (r.left + r.width / 2);
+      const y = e.clientY - (r.top + r.height / 2);
+      gsap.to(el, { x: x * strength, y: y * strength, duration: 0.5, ease: "power3.out", overwrite: "auto" });
+    };
+    const onLeave = () => {
+      gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.4)", overwrite: "auto" });
+    };
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("mouseleave", onLeave);
+    cleanups.push(() => {
+      el.removeEventListener("mousemove", onMove);
+      el.removeEventListener("mouseleave", onLeave);
+      gsap.set(el, { clearProps: "transform" });
+      el.classList.remove("fx-magnetic");
+    });
+  });
+
+  return () => cleanups.forEach((fn) => fn());
+}
+
+// —— Parallax imersivo (desktop): profundidade sutil ligada ao scroll ——
+function setupImmersiveParallax(reduceMotion) {
+  if (reduceMotion) return () => {};
+  if (window.matchMedia("(pointer: coarse)").matches) return () => {};
+  if (typeof ScrollTrigger === "undefined") return () => {};
+
+  const triggers = [];
+  const tweens = [];
+
+  const addParallax = (selector, fromY, toY, scrub = 0.6) => {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    const tw = gsap.fromTo(
+      el,
+      { yPercent: fromY },
+      {
+        yPercent: toY,
+        ease: "none",
+        scrollTrigger: {
+          trigger: el.closest("section") || el,
+          start: "top bottom",
+          end: "bottom top",
+          scrub,
+        },
+      },
+    );
+    tweens.push(tw);
+    if (tw.scrollTrigger) triggers.push(tw.scrollTrigger);
+  };
+
+  // Retrato do contato e fundo da trajetória ganham leve deslocamento de profundidade.
+  addParallax(".ln-footer-image", 8, -8, 0.7);
+  addParallax(".trajetoria-expansion__bg-image", -6, 6, 0.8);
+
+  return () => {
+    triggers.forEach((t) => t.kill());
+    tweens.forEach((tw) => tw.kill());
+  };
+}
+
+// —— Rede de segurança dos reveals: nada de conteúdo preso invisível ——
+// Cobre scroll muito rápido, navegação por hash e crawlers que não rolam a página.
+function setupRevealSafety() {
+  const main = document.getElementById("main-content");
+  if (!main) return () => {};
+
+  const isStuckHidden = (el) => {
+    const cs = window.getComputedStyle(el);
+    return cs.visibility === "hidden" || Number.parseFloat(cs.opacity) === 0;
+  };
+  const isMeaningfullyInView = (el) => {
+    const r = el.getBoundingClientRect();
+    const vh = window.innerHeight || 0;
+    if (!r.width || !r.height) return false;
+    // Bem dentro do viewport: evita "estourar" um reveal que está prestes a animar.
+    return r.top < vh * 0.92 && r.bottom > vh * 0.04;
+  };
+
+  const sweep = () => {
+    const nodes = main.querySelectorAll("[style]");
+    nodes.forEach((el) => {
+      if (!isStuckHidden(el) || !isMeaningfullyInView(el)) return;
+      if (typeof gsap !== "undefined") {
+        gsap.set(el, { autoAlpha: 1, clearProps: "opacity,visibility,transform" });
+      } else {
+        el.style.visibility = "visible";
+        el.style.opacity = "1";
+      }
+    });
+  };
+
+  let scrollEndTimer = 0;
+  const onScroll = () => {
+    if (scrollEndTimer) clearTimeout(scrollEndTimer);
+    scrollEndTimer = window.setTimeout(sweep, 450);
+  };
+  const onHash = () => window.setTimeout(sweep, 700);
+
+  const initial = [900, 1800, 3200].map((t) => window.setTimeout(sweep, t));
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("hashchange", onHash);
+  window.addEventListener("load", () => window.setTimeout(sweep, 600), { once: true });
+
+  return () => {
+    if (scrollEndTimer) clearTimeout(scrollEndTimer);
+    initial.forEach((t) => clearTimeout(t));
+    window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("hashchange", onHash);
+  };
+}
+
 function main() {
   const reduceMotion = prefersReducedMotion();
   const disposers = [];
@@ -2392,6 +2774,9 @@ function main() {
     setupScrollHighlights(reduceMotion);
     const projectDisposer = setupProjectCards(reduceMotion);
     if (typeof projectDisposer === "function") disposers.push(projectDisposer);
+    const projectFxDisposer = setupProjectCardFx(reduceMotion);
+    if (typeof projectFxDisposer === "function") disposers.push(projectFxDisposer);
+    disposers.push(setupScrollVelocitySkew(reduceMotion));
     disposers.push(setupContatoOverlay(reduceMotion));
     disposers.push(setupContatoLandoReplica(reduceMotion));
     disposers.push(setupStackGradientBars(reduceMotion));
@@ -2402,6 +2787,11 @@ function main() {
       disposers.push(setupHelmets(reduceMotion));
     }
     disposers.push(initThreeBg(reduceMotion, depthState));
+    disposers.push(setupFxLayers(reduceMotion));
+    disposers.push(setupCustomCursor(reduceMotion));
+    disposers.push(setupMagneticButtons(reduceMotion));
+    disposers.push(setupImmersiveParallax(reduceMotion));
+    disposers.push(setupRevealSafety());
   }, document.body);
 
   if (!reduceMotion) {

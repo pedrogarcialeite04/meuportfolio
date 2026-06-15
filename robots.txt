@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pedrogarcialeite04.github.io/meuportfolio/sitemap.xml

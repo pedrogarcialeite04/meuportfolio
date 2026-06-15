@@ -23,11 +23,13 @@
 @font-face {
   font-family: Brier;
   src: url("./assets/fonts/brier-bold.otf");
+  font-display: swap;
 }
 
 @font-face {
   font-family: BungeeCustom;
   src: url("./assets/fonts/bungee-regular.ttf");
+  font-display: swap;
 }
 
 *,
@@ -660,7 +662,7 @@ body.header-scrolled .burger-line {
 .hero-base-layer {
   position: absolute;
   inset: 0;
-  background-image: url("./assets/images/hero/teste2gmn1-removebg-preview.png");
+  background-image: url("./assets/images/hero/teste2gmn1-removebg-preview.webp");
   background-repeat: no-repeat;
   background-position: center bottom;
   background-size: contain;
@@ -674,7 +676,7 @@ body.header-scrolled .burger-line {
   left: var(--hero-reveal-left);
   width: var(--hero-reveal-width);
   height: var(--hero-reveal-height);
-  background-image: url("./assets/images/hero/Gemini_Generated_Image_glnrcoglnrcoglnr-removebg-preview.png");
+  background-image: url("./assets/images/hero/Gemini_Generated_Image_glnrcoglnrcoglnr-removebg-preview.webp");
   background-repeat: no-repeat;
   background-position: center bottom;
   background-size: contain;
@@ -1537,14 +1539,11 @@ body.hero-scroll-locked {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 28px 80px rgba(0, 0, 0, 0.36);
-  -webkit-mask-image: url("./assets/svgs/image-bg.svg");
-  mask-image: url("./assets/svgs/image-bg.svg");
-  -webkit-mask-size: cover;
-  mask-size: cover;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
+  /* A mask-image anterior (image-bg.svg) era interpretada como luminance e, por
+     ter preenchimento escuro, escondia todo o conteúdo do contato. Removida:
+     o border-radius + overflow:hidden já entregam o recorte de card. */
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .ln-footer-pattern {
@@ -4165,6 +4164,403 @@ body.menu-open {
   .trajetoria-expansion__date,
   .trajetoria-expansion__hint,
   .trajetoria-expansion__title {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   FX SURREAIS — camada aditiva (cursor, grão, orbs, progresso,
+   cards de projeto premium). Tudo ativado por classes via JS e
+   neutralizado em prefers-reduced-motion / pointer coarse.
+   ============================================================ */
+
+@property --pcfx-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* —— Barra de progresso de scroll (topo) —— */
+.fx-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 1600;
+  transform: scaleX(var(--scroll, 0));
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgba(210, 255, 0, 0) 0%, var(--default) 40%, #f4ffb0 70%, var(--default) 100%);
+  box-shadow: 0 0 18px rgba(210, 255, 0, 0.55);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* —— Grão de filme animado (overlay sutil) —— */
+.fx-grain {
+  position: fixed;
+  inset: -120% -120%;
+  z-index: 1200;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: fxGrainShift 0.9s steps(4) infinite;
+  will-change: transform;
+}
+
+@keyframes fxGrainShift {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-6%, 4%); }
+  50% { transform: translate(4%, -6%); }
+  75% { transform: translate(-4%, -4%); }
+  100% { transform: translate(6%, 4%); }
+}
+
+/* —— Orbs de gradiente flutuantes (fundo surreal) —— */
+.fx-orbs {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fx-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.4;
+  will-change: transform;
+  mix-blend-mode: screen;
+}
+
+.fx-orb--1 {
+  width: 46vmax;
+  height: 46vmax;
+  left: -14vmax;
+  top: -10vmax;
+  background: radial-gradient(circle at 50% 50%, rgba(210, 255, 0, 0.5), rgba(210, 255, 0, 0) 68%);
+  animation: fxOrbDrift1 26s ease-in-out infinite;
+}
+
+.fx-orb--2 {
+  width: 40vmax;
+  height: 40vmax;
+  right: -12vmax;
+  top: 26vh;
+  background: radial-gradient(circle at 50% 50%, rgba(120, 200, 255, 0.32), rgba(120, 200, 255, 0) 70%);
+  animation: fxOrbDrift2 32s ease-in-out infinite;
+}
+
+.fx-orb--3 {
+  width: 36vmax;
+  height: 36vmax;
+  left: 30vw;
+  bottom: -16vmax;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 120, 210, 0.26), rgba(255, 120, 210, 0) 70%);
+  animation: fxOrbDrift3 38s ease-in-out infinite;
+}
+
+@keyframes fxOrbDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8vmax, 6vmax) scale(1.14); }
+}
+
+@keyframes fxOrbDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1.05); }
+  50% { transform: translate(-7vmax, -5vmax) scale(0.9); }
+}
+
+@keyframes fxOrbDrift3 {
+  0%, 100% { transform: translate(0, 0) scale(0.95); }
+  50% { transform: translate(-6vmax, -8vmax) scale(1.2); }
+}
+
+/* —— Cursor customizado (desktop, ponteiro fino) —— */
+.has-fx-cursor,
+.has-fx-cursor a,
+.has-fx-cursor button,
+.has-fx-cursor .project-showcase-card,
+.has-fx-cursor .brand-chip {
+  cursor: none;
+}
+
+.fx-cursor-dot,
+.fx-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 2000;
+  border-radius: 50%;
+  transform: translate3d(-50%, -50%, 0);
+  will-change: transform;
+}
+
+.fx-cursor-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--default);
+  box-shadow: 0 0 12px rgba(210, 255, 0, 0.8);
+  transition: opacity 0.25s ease, width 0.18s ease, height 0.18s ease;
+}
+
+.fx-cursor-ring {
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid rgba(210, 255, 0, 0.55);
+  transition:
+    width 0.28s var(--ease-out-expo),
+    height 0.28s var(--ease-out-expo),
+    border-color 0.28s ease,
+    background-color 0.28s ease,
+    opacity 0.25s ease;
+}
+
+body.fx-cursor-hover .fx-cursor-ring {
+  width: 64px;
+  height: 64px;
+  border-color: rgba(210, 255, 0, 0.9);
+  background: rgba(210, 255, 0, 0.08);
+}
+
+body.fx-cursor-hover .fx-cursor-dot {
+  width: 4px;
+  height: 4px;
+}
+
+body.fx-cursor-down .fx-cursor-ring {
+  width: 26px;
+  height: 26px;
+}
+
+.fx-cursor-hidden {
+  opacity: 0 !important;
+}
+
+/* —— Personalização dos cards de projeto —— */
+.project-showcase-grid {
+  transform: skewY(var(--grid-skew, 0deg));
+  transition: transform 0.2s ease-out;
+}
+
+.project-showcase-card {
+  perspective: 1400px;
+}
+
+.project-card-3d {
+  position: relative;
+  display: block;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.4s var(--ease-out-expo);
+  will-change: transform;
+}
+
+/* Camada de luz que segue o cursor dentro do card */
+.project-card-spot {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    260px circle at var(--sx, 50%) var(--sy, 50%),
+    rgba(210, 255, 0, 0.22),
+    rgba(210, 255, 0, 0.06) 38%,
+    transparent 62%
+  );
+  transition: opacity 0.3s ease;
+  mix-blend-mode: screen;
+}
+
+.project-showcase-card:hover .project-card-spot,
+.project-showcase-card:focus-within .project-card-spot {
+  opacity: 1;
+}
+
+/* Borda de gradiente cônico que gira no hover */
+.project-card-border {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1px;
+  opacity: 0;
+  background: conic-gradient(
+    from var(--pcfx-angle),
+    transparent 0deg,
+    rgba(210, 255, 0, 0.9) 70deg,
+    rgba(244, 255, 176, 0.7) 120deg,
+    transparent 200deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  transition: opacity 0.35s ease;
+}
+
+.project-showcase-card:hover .project-card-border,
+.project-showcase-card:focus-within .project-card-border {
+  opacity: 1;
+  animation: pcfxBorderSpin 4s linear infinite;
+}
+
+@keyframes pcfxBorderSpin {
+  to { --pcfx-angle: 360deg; }
+}
+
+/* Número do projeto em destaque */
+.project-card-index {
+  position: absolute;
+  top: 9px;
+  right: 11px;
+  z-index: 5;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(210, 255, 0, 0.85);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(210, 255, 0, 0.32);
+  background: rgba(8, 10, 6, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transform: translateZ(40px);
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.4s var(--ease-out-expo);
+}
+
+.project-showcase-card:hover .project-card-index,
+.project-showcase-card:focus-within .project-card-index {
+  opacity: 1;
+}
+
+/* Brilho diagonal varrendo o card */
+.project-card-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.project-card-shine::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -120%;
+  width: 60%;
+  height: 220%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.16) 46%,
+    rgba(210, 255, 0, 0.22) 52%,
+    transparent
+  );
+  transform: rotate(8deg);
+}
+
+.project-showcase-card:hover .project-card-shine {
+  opacity: 1;
+}
+
+.project-showcase-card:hover .project-card-shine::before {
+  animation: pcfxShine 0.9s var(--ease-out-expo);
+}
+
+@keyframes pcfxShine {
+  from { left: -120%; }
+  to { left: 160%; }
+}
+
+/* Caption / CTA ganham profundidade no tilt */
+.project-card-3d .project-showcase-card__caption {
+  transform: translateZ(28px);
+}
+
+.project-card-3d .project-showcase-card__cta {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.25s var(--ease-out-expo),
+    box-shadow 0.25s ease;
+}
+
+.project-showcase-card:hover .project-card-3d .project-showcase-card__cta {
+  box-shadow: 0 6px 20px rgba(210, 255, 0, 0.22);
+}
+
+/* —— Botões magnéticos —— */
+.fx-magnetic {
+  will-change: transform;
+}
+
+/* —— Desativações de segurança —— */
+@media (hover: none), (pointer: coarse) {
+  .has-fx-cursor,
+  .has-fx-cursor a,
+  .has-fx-cursor button,
+  .has-fx-cursor .project-showcase-card,
+  .has-fx-cursor .brand-chip {
+    cursor: auto;
+  }
+
+  .fx-cursor-dot,
+  .fx-cursor-ring {
+    display: none;
+  }
+
+  /* Performance mobile: sem blur pesado nem grão animado */
+  .fx-orbs,
+  .fx-grain {
+    display: none !important;
+  }
+
+  .project-card-3d {
+    transform: none !important;
+  }
+
+  .project-showcase-grid {
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-grain,
+  .fx-orb {
+    animation: none;
+  }
+
+  .fx-orbs {
+    display: none;
+  }
+
+  .project-card-3d {
+    transform: none !important;
+    transition: none;
+  }
+
+  .project-showcase-grid {
+    transform: none !important;
+  }
+
+  .project-card-border {
+    animation: none;
+  }
+
+  .fx-scroll-progress {
     transition: none;
   }
 }
