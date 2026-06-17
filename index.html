@@ -120,8 +120,6 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <canvas id="three-bg" aria-hidden="true"></canvas>
-
   <header class="header">
     <a class="logo" href="#hero"></a>
     <button type="button" id="menu-toggle" class="menu-toggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu-overlay">
@@ -236,6 +234,19 @@
 
   <main id="main-content">
     <section id="hero" class="hero">
+      <div class="hero-lines" aria-hidden="true">
+        <div class="hero-lines__ambient"></div>
+        <div class="hero-lines__canvas">
+          <div class="hero-lines__field hero-lines__field--primary"></div>
+          <div class="hero-lines__field hero-lines__field--ghost"></div>
+        </div>
+        <div class="hero-lines__grain"></div>
+        <div class="hero-lines__wash"></div>
+      </div>
+      <div class="hero-veil" aria-hidden="true"></div>
+      <div class="hero-smoke-zone" aria-hidden="true">
+        <canvas class="hero-smoke" id="hero-smoke"></canvas>
+      </div>
       <div class="hero-stage" id="hero-stage" aria-label="Destaque principal">
         <p class="hero-wordmark" aria-hidden="true">PEDROCADEV</p>
         <svg class="hero-defs" width="0" height="0" aria-hidden="true">
@@ -333,7 +344,7 @@
         <p class="folio-eyebrow">Ferramentas</p>
         <h2 class="title stack-title" id="stack-title"><span>Stacks</span></h2>
         <p class="lead stack-lead">
-          Uso <strong>JavaScript</strong> e <strong>Node.js</strong> como base no dia a dia e, nos freelances, junto tudo o que você pode ver na lista abaixo — para entregar sites e produtos <strong>rápidos</strong>, com bom aspeto e escaláveis.
+          Uso <strong>Typescript</strong> e <strong>React</strong> como base no dia a dia e, nos freelances, junto tudo o que você pode ver na lista abaixo — para entregar sites e produtos <strong>rápidos</strong>, com bom aspeto e escaláveis.
         </p>
         <div class="marquee marquee--framed" id="partners-marquee">
           <div class="marquee-track" id="marquee-track"></div>
@@ -352,7 +363,7 @@
           class="trajetoria-expansion__bg-image"
           src="./assets/images/Gemini_Generated_Image_rluay3rluay3rlua-removebg-preview.webp"
           alt=""
-          loading="eager"
+          loading="lazy"
           decoding="async"
           aria-hidden="true"
         />
@@ -564,7 +575,6 @@ Sou um entusiasta do ecossistema Web e do Front-end, focado em construir aplica�
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js" defer></script>
   <script src="./script.js" defer></script>
 </body>
 </html>

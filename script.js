@@ -156,6 +156,8 @@ function buildStackFromFreelanceProjects() {
 }
 
 const STACK = [
+  "TypeScript",
+  "React",
   "JavaScript",
   "CSS",
   "HTML",
@@ -217,6 +219,55 @@ const TRAJETORIA_EXPANSION_MEDIA = {
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+const perfMqMobile = window.matchMedia("(max-width: 768px)");
+const perfMqCoarse = window.matchMedia("(pointer: coarse)");
+
+function perfSaveDataOrSlowNet() {
+  const conn = navigator.connection;
+  if (!conn) return false;
+  if (conn.saveData) return true;
+  const t = conn.effectiveType;
+  return t === "slow-2g" || t === "2g";
+}
+
+/** DPR adaptativo: mantém nitidez no desktop e poupa GPU em mobile / hardware modesto. */
+function getOptimalCanvasDpr(maxDesktop = 2, maxMobile = 1.35) {
+  const cap = perfMqMobile.matches || perfMqCoarse.matches ? maxMobile : maxDesktop;
+  if (perfSaveDataOrSlowNet()) return Math.min(1, cap);
+  if (typeof navigator.deviceMemory === "number" && navigator.deviceMemory <= 4) {
+    return Math.min(perfMqMobile.matches ? 1 : 1.25, cap);
+  }
+  return Math.min(window.devicePixelRatio || 1, cap);
+}
+
+function bindDocHidden(onChange) {
+  let hidden = document.hidden;
+  const onVis = () => {
+    hidden = document.hidden;
+    onChange(hidden);
+  };
+  document.addEventListener("visibilitychange", onVis);
+  return () => document.removeEventListener("visibilitychange", onVis);
+}
+
+/** Pausa loops pesados quando a secção sai do viewport (efeito intacto ao voltar). */
+function observeInView(el, onChange, rootMargin = "80px 0px") {
+  if (!el || typeof IntersectionObserver === "undefined") return () => {};
+  let inView = true;
+  const io = new IntersectionObserver(
+    (entries) => {
+      const next = entries.some((e) => e.isIntersecting);
+      if (next !== inView) {
+        inView = next;
+        onChange(inView);
+      }
+    },
+    { threshold: 0, rootMargin },
+  );
+  io.observe(el);
+  return () => io.disconnect();
 }
 
 function getAbsoluteTop(el) {
@@ -837,8 +888,8 @@ function setupHeroBlobMask(reduceMotion) {
     const dt = Math.min(0.045, Math.max(1 / 240, (tMs - prevMs) / 1000));
     prevMs = tMs;
 
-    if (!heroInView) {
-      raf = requestAnimationFrame(tick);
+    if (!heroInView || document.hidden) {
+      raf = 0;
       return;
     }
 
@@ -961,6 +1012,16 @@ function setupHeroBlobMask(reduceMotion) {
     }
 
     raf = requestAnimationFrame(tick);
+  };
+
+  const ensureHeroTick = () => {
+    if (!raf && heroInView && !document.hidden) raf = requestAnimationFrame(tick);
+  };
+  const stopHeroTick = () => {
+    if (raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
   };
 
   const onResize = () => {
@@ -1119,12 +1180,20 @@ function setupHeroBlobMask(reduceMotion) {
         if (heroInView) {
           lastGradientMask = "";
           scheduleLayout();
+          ensureHeroTick();
+        } else {
+          stopHeroTick();
         }
       },
       { threshold: 0, rootMargin: "60px 0px" },
     );
     heroVisibilityObserver.observe(heroSection);
   }
+
+  const unbindHeroDocHidden = bindDocHidden((hidden) => {
+    if (hidden) stopHeroTick();
+    else ensureHeroTick();
+  });
 
   window.addEventListener("mousemove", onMove);
   if (typeof PointerEvent !== "undefined") {
@@ -1157,10 +1226,11 @@ function setupHeroBlobMask(reduceMotion) {
   }
   syncLockButtonUi(false);
   onResize();
-  raf = requestAnimationFrame(tick);
+  ensureHeroTick();
 
   return () => {
-    cancelAnimationFrame(raf);
+    stopHeroTick();
+    unbindHeroDocHidden();
     if (layoutRaf) cancelAnimationFrame(layoutRaf);
     if (scrollSyncRaf) cancelAnimationFrame(scrollSyncRaf);
     if (scrollLocked) setScrollLocked(false);
@@ -1211,6 +1281,119 @@ function setupHeroBlobMask(reduceMotion) {
     reveal.style.removeProperty("mask");
     reveal.style.removeProperty("-webkit-mask");
     reveal.style.removeProperty("clip-path");
+  };
+}
+
+function setupHeroLinesParallax(reduceMotion) {
+  const hero = document.getElementById("hero");
+  if (!hero || reduceMotion) return () => {};
+
+  let targetX = 0;
+  let targetY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  let rafId = 0;
+  let heroInView = true;
+
+  const needsTick = () =>
+    heroInView &&
+    !document.hidden &&
+    (Math.abs(targetX - currentX) > 0.0008 ||
+      Math.abs(targetY - currentY) > 0.0008 ||
+      targetX !== 0 ||
+      targetY !== 0);
+
+  const tick = () => {
+    rafId = 0;
+    if (!heroInView || document.hidden) return;
+
+    currentX += (targetX - currentX) * 0.055;
+    currentY += (targetY - currentY) * 0.055;
+    hero.style.setProperty("--hero-line-shift-x", `${(currentX * 11).toFixed(2)}px`);
+    hero.style.setProperty("--hero-line-shift-y", `${(currentY * 7).toFixed(2)}px`);
+    hero.style.setProperty("--hero-line-ghost-x", `${(-currentX * 18).toFixed(2)}px`);
+    hero.style.setProperty("--hero-line-ghost-y", `${(-currentY * 12).toFixed(2)}px`);
+
+    if (needsTick()) rafId = requestAnimationFrame(tick);
+  };
+
+  const ensureTick = () => {
+    if (!rafId && needsTick()) rafId = requestAnimationFrame(tick);
+  };
+
+  const onPointerMove = (e) => {
+    if (!heroInView) return;
+    const rect = hero.getBoundingClientRect();
+    if (
+      e.clientX < rect.left ||
+      e.clientX > rect.right ||
+      e.clientY < rect.top ||
+      e.clientY > rect.bottom
+    ) {
+      targetX = 0;
+      targetY = 0;
+      ensureTick();
+      return;
+    }
+    targetX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+    targetY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    ensureTick();
+  };
+
+  const onPointerLeave = () => {
+    targetX = 0;
+    targetY = 0;
+    ensureTick();
+  };
+
+  const unbindDocHidden = bindDocHidden(() => {
+    if (document.hidden && rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    } else {
+      ensureTick();
+    }
+  });
+
+  const unbindInView = observeInView(
+    hero,
+    (inView) => {
+      heroInView = inView;
+      if (inView) ensureTick();
+      else if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+    },
+    "120px 0px",
+  );
+
+  ensureTick();
+  window.addEventListener("pointermove", onPointerMove, { passive: true });
+  hero.addEventListener("pointerleave", onPointerLeave);
+
+  const st = ScrollTrigger.create({
+    trigger: hero,
+    start: "top top",
+    end: "bottom top",
+    scrub: 0.45,
+    onUpdate: (self) => {
+      hero.style.setProperty("--hero-scroll", self.progress.toFixed(4));
+    },
+  });
+
+  return () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    unbindDocHidden();
+    unbindInView();
+    window.removeEventListener("pointermove", onPointerMove);
+    hero.removeEventListener("pointerleave", onPointerLeave);
+    st.kill();
+    hero.style.removeProperty("--hero-line-shift-x");
+    hero.style.removeProperty("--hero-line-shift-y");
+    hero.style.removeProperty("--hero-line-ghost-x");
+    hero.style.removeProperty("--hero-line-ghost-y");
+    hero.style.removeProperty("--hero-scroll");
   };
 }
 
@@ -1265,14 +1448,13 @@ function setupPerspectiveHoverCards(reduceMotion) {
     state.active = false;
   };
 
-  states.forEach((state) => {
-    state.onMove = onMoveFactory(state);
-    state.onLeave = onLeaveFactory(state);
-    state.card.addEventListener("mousemove", state.onMove);
-    state.card.addEventListener("mouseleave", state.onLeave);
-  });
-
   if (reduceMotion) {
+    states.forEach((state) => {
+      state.onMove = onMoveFactory(state);
+      state.onLeave = onLeaveFactory(state);
+      state.card.addEventListener("mousemove", state.onMove);
+      state.card.addEventListener("mouseleave", state.onLeave);
+    });
     return () => {
       states.forEach((state) => {
         state.card.removeEventListener("mousemove", state.onMove);
@@ -1286,6 +1468,7 @@ function setupPerspectiveHoverCards(reduceMotion) {
     const dt = Math.min(0.034, (now - previousTime) / 1000);
     previousTime = now;
     const smoothing = Math.min(1, 0.12 * gsap.ticker.deltaRatio(60));
+    let anyMotion = false;
 
     states.forEach((state) => {
       const forceX = stiffness * (state.targetX - state.currentX);
@@ -1310,13 +1493,49 @@ function setupPerspectiveHoverCards(reduceMotion) {
         state.glare.style.setProperty("--glare-y", `${state.glareY.toFixed(2)}%`);
         state.glare.style.opacity = state.glareOpacity.toFixed(3);
       }
+
+      if (
+        state.active ||
+        Math.abs(state.targetX - state.currentX) > 0.004 ||
+        Math.abs(state.targetY - state.currentY) > 0.004 ||
+        Math.abs(state.velocityX) > 0.02 ||
+        Math.abs(state.velocityY) > 0.02
+      ) {
+        anyMotion = true;
+      }
     });
+
+    if (!anyMotion) {
+      gsap.ticker.remove(tick);
+      tiltTickerOn = false;
+    }
   };
 
-  gsap.ticker.add(tick);
+  let tiltTickerOn = false;
+  const ensureTiltTicker = () => {
+    if (!tiltTickerOn) {
+      gsap.ticker.add(tick);
+      tiltTickerOn = true;
+    }
+  };
+
+  states.forEach((state) => {
+    const baseMove = onMoveFactory(state);
+    const baseLeave = onLeaveFactory(state);
+    state.onMove = (event) => {
+      baseMove(event);
+      ensureTiltTicker();
+    };
+    state.onLeave = () => {
+      baseLeave();
+      ensureTiltTicker();
+    };
+    state.card.addEventListener("mousemove", state.onMove);
+    state.card.addEventListener("mouseleave", state.onLeave);
+  });
 
   return () => {
-    gsap.ticker.remove(tick);
+    if (tiltTickerOn) gsap.ticker.remove(tick);
     states.forEach((state) => {
       state.card.removeEventListener("mousemove", state.onMove);
       state.card.removeEventListener("mouseleave", state.onLeave);
@@ -1345,7 +1564,7 @@ function setupPageIntroOutro(reduceMotion) {
   };
 }
 
-function setupScrollProgress(reduceMotion, depthState) {
+function setupScrollProgress(reduceMotion) {
   if (reduceMotion) return () => {};
   const st = ScrollTrigger.create({
     trigger: document.body,
@@ -1353,17 +1572,7 @@ function setupScrollProgress(reduceMotion, depthState) {
     end: "bottom bottom",
     scrub: 0.2,
     onUpdate: (self) => {
-      const p = self.progress;
-      document.documentElement.style.setProperty("--scroll", p.toFixed(4));
-      if (depthState) {
-        depthState.scrollDepth = p;
-        const lab = document.getElementById("lab");
-        if (lab) {
-          const r = lab.getBoundingClientRect();
-          const vh = window.innerHeight || 1;
-          depthState.sectionMix = Math.max(0, Math.min(1, 1 - r.top / vh)) * 0.55;
-        }
-      }
+      document.documentElement.style.setProperty("--scroll", self.progress.toFixed(4));
     },
   });
   return () => {
@@ -2068,15 +2277,24 @@ function setupPartnersMarquee(reduceMotion) {
     gsap.set(track, { x });
   };
 
-  const onMouseMove = (e) => {
-    if (reduceMotion) return;
-    const rect = wrap.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width - 0.5;
-    const py = (e.clientY - rect.top) / rect.height - 0.5;
-    wrap.style.setProperty("--stack-tilt-y", `${(px * 4).toFixed(2)}deg`);
-    wrap.style.setProperty("--stack-tilt-x", `${(-py * 3).toFixed(2)}deg`);
-    wrap.style.setProperty("--stack-shine-x", `${((px + 0.5) * 100).toFixed(1)}%`);
+  let marqueeTickerOn = false;
+  let marqueeInView = true;
+  const syncMarqueeTicker = () => {
+    const shouldRun = !reduceMotion && marqueeInView && !document.hidden;
+    if (shouldRun && !marqueeTickerOn) {
+      gsap.ticker.add(tick);
+      marqueeTickerOn = true;
+    } else if (!shouldRun && marqueeTickerOn) {
+      gsap.ticker.remove(tick);
+      marqueeTickerOn = false;
+    }
   };
+
+  const unbindMarqueeInView = observeInView(wrap, (inView) => {
+    marqueeInView = inView;
+    syncMarqueeTicker();
+  }, "160px 0px");
+  const unbindMarqueeDocHidden = bindDocHidden(() => syncMarqueeTicker());
 
   const onMouseEnter = () => {
     speedBoost = 1.55;
@@ -2084,14 +2302,10 @@ function setupPartnersMarquee(reduceMotion) {
 
   const onMouseLeave = () => {
     speedBoost = 1;
-    wrap.style.setProperty("--stack-tilt-y", "0deg");
-    wrap.style.setProperty("--stack-tilt-x", "0deg");
-    wrap.style.setProperty("--stack-shine-x", "50%");
   };
 
   if (!reduceMotion) {
-    gsap.ticker.add(tick);
-    wrap.addEventListener("mousemove", onMouseMove);
+    syncMarqueeTicker();
     wrap.addEventListener("mouseenter", onMouseEnter);
     wrap.addEventListener("mouseleave", onMouseLeave);
   }
@@ -2110,51 +2324,14 @@ function setupPartnersMarquee(reduceMotion) {
 
   return () => {
     if (!reduceMotion) {
-      gsap.ticker.remove(tick);
-      wrap.removeEventListener("mousemove", onMouseMove);
+      if (marqueeTickerOn) gsap.ticker.remove(tick);
+      unbindMarqueeInView();
+      unbindMarqueeDocHidden();
       wrap.removeEventListener("mouseenter", onMouseEnter);
       wrap.removeEventListener("mouseleave", onMouseLeave);
     }
     st.kill();
     window.removeEventListener("resize", onResize);
-  };
-}
-
-function setupStackGradientBars(reduceMotion) {
-  const root = document.getElementById("stack-gradient-bars");
-  if (!root) return () => {};
-
-  const numBars = 15;
-  const gradientFrom = "rgba(210, 255, 0, 0.6)";
-  const animationDuration = 2.2;
-
-  const calculateHeight = (index, total) => {
-    const position = index / (total - 1);
-    const maxHeight = 1;
-    const minHeight = 0.3;
-    const center = 0.5;
-    const distanceFromCenter = Math.abs(position - center);
-    const heightScale = Math.pow(distanceFromCenter * 2, 1.2);
-    return minHeight + (maxHeight - minHeight) * heightScale;
-  };
-
-  const fragment = document.createDocumentFragment();
-  for (let i = 0; i < numBars; i += 1) {
-    const bar = document.createElement("span");
-    bar.className = "stack-gradient-bar";
-    bar.style.flexBasis = `calc(100% / ${numBars})`;
-    bar.style.maxWidth = `calc(100% / ${numBars})`;
-    bar.style.setProperty("--initial-scale", String(calculateHeight(i, numBars)));
-    bar.style.setProperty("--stack-delay", `${i * 0.1}s`);
-    bar.style.setProperty("--stack-duration", `${animationDuration}s`);
-    bar.style.background = `linear-gradient(to top, ${gradientFrom}, transparent 80%)`;
-    if (reduceMotion) bar.style.animation = "none";
-    fragment.appendChild(bar);
-  }
-  root.replaceChildren(fragment);
-
-  return () => {
-    root.replaceChildren();
   };
 }
 
@@ -2263,116 +2440,6 @@ function setupHelmets(reduceMotion) {
   };
 }
 
-function initThreeBg(reduceMotion, depthState) {
-  const canvas = document.getElementById("three-bg");
-  if (!canvas || reduceMotion || typeof THREE === "undefined") {
-    if (canvas && reduceMotion) canvas.style.display = "none";
-    return () => {};
-  }
-
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 100);
-  camera.position.z = 8;
-  const projetosSection = document.getElementById("projetos");
-  let projetosThreeTrigger = null;
-
-  const mqMobileThree = window.matchMedia("(max-width: 768px)");
-  const knotSeg = mqMobileThree.matches ? { tubular: 96, radial: 20 } : { tubular: 160, radial: 28 };
-  const knot = new THREE.Mesh(
-    new THREE.TorusKnotGeometry(2.15, 0.2, knotSeg.tubular, knotSeg.radial),
-    new THREE.MeshBasicMaterial({ color: 0xd2ff00, wireframe: true }),
-  );
-  scene.add(knot);
-
-  const n = mqMobileThree.matches ? 320 : 600;
-  const positions = new Float32Array(n * 3);
-  for (let i = 0; i < n * 3; i += 1) positions[i] = (Math.random() - 0.5) * 22;
-  const particlesGeo = new THREE.BufferGeometry();
-  particlesGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  const stars = new THREE.Points(
-    particlesGeo,
-    new THREE.PointsMaterial({ color: 0xffffff, size: 0.028, transparent: true, opacity: 0.9 }),
-  );
-  scene.add(stars);
-
-  const resize = () => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const pr = Math.min(window.devicePixelRatio || 1, mqMobileThree.matches ? 1.25 : 2);
-    renderer.setPixelRatio(pr);
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  };
-  resize();
-  window.addEventListener("resize", resize);
-  if (typeof mqMobileThree.addEventListener === "function") {
-    mqMobileThree.addEventListener("change", resize);
-  } else {
-    mqMobileThree.addListener(resize);
-  }
-
-  if (projetosSection) {
-    const hideThree = () => document.body.classList.add("three-off-projects");
-    const showThree = () => document.body.classList.remove("three-off-projects");
-    projetosThreeTrigger = ScrollTrigger.create({
-      trigger: projetosSection,
-      start: "top bottom",
-      end: "bottom top",
-      onEnter: hideThree,
-      onEnterBack: hideThree,
-      onLeave: showThree,
-      onLeaveBack: showThree,
-    });
-  }
-
-  let raf = 0;
-  let threeHidden = document.hidden;
-  const onThreeVisibility = () => {
-    threeHidden = document.hidden;
-  };
-  document.addEventListener("visibilitychange", onThreeVisibility);
-  const render = () => {
-    if (!threeHidden) {
-      const depth = depthState ? depthState.scrollDepth || 0 : 0;
-      const mix = depthState ? depthState.sectionMix || 0 : 0;
-      const speedBoost = 1 + depth * 1.8 + mix * 0.8;
-
-      knot.rotation.x += 0.0024 * speedBoost;
-      knot.rotation.y += 0.0031 * speedBoost;
-      knot.rotation.z = Math.sin(performance.now() * 0.00035) * 0.18 * (1 + depth);
-      knot.position.z = -0.4 + depth * 1.15;
-      stars.rotation.y += 0.00022 + depth * 0.0005;
-      stars.rotation.x = Math.sin(performance.now() * 0.00022) * (0.03 + mix * 0.09);
-      stars.material.opacity = 0.72 + depth * 0.25;
-      camera.position.z = 8 - depth * 1.1;
-
-      renderer.render(scene, camera);
-    }
-    raf = requestAnimationFrame(render);
-  };
-  raf = requestAnimationFrame(render);
-
-  return () => {
-    cancelAnimationFrame(raf);
-    document.removeEventListener("visibilitychange", onThreeVisibility);
-    window.removeEventListener("resize", resize);
-    if (typeof mqMobileThree.removeEventListener === "function") {
-      mqMobileThree.removeEventListener("change", resize);
-    } else {
-      mqMobileThree.removeListener(resize);
-    }
-    if (projetosThreeTrigger) projetosThreeTrigger.kill();
-    document.body.classList.remove("three-off-projects");
-    particlesGeo.dispose();
-    knot.geometry.dispose();
-    knot.material.dispose();
-    stars.material.dispose();
-    renderer.dispose();
-  };
-}
-
 // —— FX surreais: camadas de fundo, barra de progresso e grão ——
 function setupFxLayers(reduceMotion) {
   const body = document.body;
@@ -2429,162 +2496,6 @@ function setupFxLayers(reduceMotion) {
   };
 }
 
-// —— Cursor customizado com follower elástico ——
-function setupCustomCursor(reduceMotion) {
-  if (reduceMotion) return () => {};
-  if (!window.matchMedia("(pointer: fine)").matches) return () => {};
-
-  const dot = document.createElement("div");
-  dot.className = "fx-cursor-dot fx-cursor-hidden";
-  dot.setAttribute("aria-hidden", "true");
-  const ring = document.createElement("div");
-  ring.className = "fx-cursor-ring fx-cursor-hidden";
-  ring.setAttribute("aria-hidden", "true");
-  document.body.append(dot, ring);
-  document.body.classList.add("has-fx-cursor");
-
-  const hoverSel = "a, button, .project-showcase-card, .brand-chip, [data-fx-hover]";
-  let mx = window.innerWidth / 2;
-  let my = window.innerHeight / 2;
-  let rx = mx;
-  let ry = my;
-  let visible = false;
-
-  const onMove = (e) => {
-    mx = e.clientX;
-    my = e.clientY;
-    if (!visible) {
-      visible = true;
-      dot.classList.remove("fx-cursor-hidden");
-      ring.classList.remove("fx-cursor-hidden");
-    }
-    const interactive = e.target && e.target.closest ? e.target.closest(hoverSel) : null;
-    document.body.classList.toggle("fx-cursor-hover", Boolean(interactive));
-  };
-  const onDown = () => document.body.classList.add("fx-cursor-down");
-  const onUp = () => document.body.classList.remove("fx-cursor-down");
-  const onLeave = () => {
-    visible = false;
-    dot.classList.add("fx-cursor-hidden");
-    ring.classList.add("fx-cursor-hidden");
-  };
-
-  window.addEventListener("mousemove", onMove, { passive: true });
-  window.addEventListener("mousedown", onDown);
-  window.addEventListener("mouseup", onUp);
-  document.addEventListener("mouseleave", onLeave);
-
-  let raf = 0;
-  const tick = () => {
-    rx += (mx - rx) * 0.18;
-    ry += (my - ry) * 0.18;
-    dot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
-    ring.style.transform = `translate3d(${rx.toFixed(2)}px, ${ry.toFixed(2)}px, 0) translate(-50%, -50%)`;
-    raf = requestAnimationFrame(tick);
-  };
-  raf = requestAnimationFrame(tick);
-
-  return () => {
-    cancelAnimationFrame(raf);
-    window.removeEventListener("mousemove", onMove);
-    window.removeEventListener("mousedown", onDown);
-    window.removeEventListener("mouseup", onUp);
-    document.removeEventListener("mouseleave", onLeave);
-    document.body.classList.remove("has-fx-cursor", "fx-cursor-hover", "fx-cursor-down");
-    dot.remove();
-    ring.remove();
-  };
-}
-
-// —— Personalização dos cards de projeto: spotlight, tilt 3D, borda, índice ——
-function setupProjectCardFx(reduceMotion) {
-  const cards = Array.from(document.querySelectorAll(".project-showcase-card"));
-  if (!cards.length) return () => {};
-  const finePointer = window.matchMedia("(pointer: fine)").matches;
-  const cleanups = [];
-
-  cards.forEach((card, index) => {
-    if (card.dataset.fxReady === "1") return;
-    card.dataset.fxReady = "1";
-
-    const inner = document.createElement("div");
-    inner.className = "project-card-3d";
-    while (card.firstChild) inner.appendChild(card.firstChild);
-    card.appendChild(inner);
-
-    const spot = document.createElement("span");
-    spot.className = "project-card-spot";
-    spot.setAttribute("aria-hidden", "true");
-
-    const border = document.createElement("span");
-    border.className = "project-card-border";
-    border.setAttribute("aria-hidden", "true");
-
-    const shine = document.createElement("span");
-    shine.className = "project-card-shine";
-    shine.setAttribute("aria-hidden", "true");
-
-    const idx = document.createElement("span");
-    idx.className = "project-card-index";
-    idx.setAttribute("aria-hidden", "true");
-    idx.textContent = String(index + 1).padStart(2, "0");
-
-    inner.append(spot, border, shine, idx);
-
-    if (reduceMotion || !finePointer) return;
-
-    let rafId = 0;
-    let trx = 0;
-    let trY = 0;
-    let crx = 0;
-    let crY = 0;
-    let active = false;
-
-    const loop = () => {
-      crx += (trx - crx) * 0.12;
-      crY += (trY - crY) * 0.12;
-      inner.style.setProperty("--rx", `${crx.toFixed(2)}deg`);
-      inner.style.setProperty("--ry", `${crY.toFixed(2)}deg`);
-      if (active || Math.abs(crx - trx) > 0.02 || Math.abs(crY - trY) > 0.02) {
-        rafId = requestAnimationFrame(loop);
-      } else {
-        inner.style.setProperty("--rx", "0deg");
-        inner.style.setProperty("--ry", "0deg");
-        rafId = 0;
-      }
-    };
-
-    const onMove = (e) => {
-      const rect = card.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      const px = (e.clientX - rect.left) / rect.width;
-      const py = (e.clientY - rect.top) / rect.height;
-      spot.style.setProperty("--sx", `${(px * 100).toFixed(1)}%`);
-      spot.style.setProperty("--sy", `${(py * 100).toFixed(1)}%`);
-      trx = (0.5 - py) * 9;
-      trY = (px - 0.5) * 11;
-      active = true;
-      if (!rafId) rafId = requestAnimationFrame(loop);
-    };
-    const onLeave = () => {
-      trx = 0;
-      trY = 0;
-      active = false;
-      if (!rafId) rafId = requestAnimationFrame(loop);
-    };
-
-    card.addEventListener("mousemove", onMove);
-    card.addEventListener("mouseleave", onLeave);
-    cleanups.push(() => {
-      if (rafId) cancelAnimationFrame(rafId);
-      card.removeEventListener("mousemove", onMove);
-      card.removeEventListener("mouseleave", onLeave);
-    });
-  });
-
-  return () => cleanups.forEach((fn) => fn());
-}
-
 // —— Skew por velocidade de scroll (toque Awwwards) na grade de projetos ——
 function setupScrollVelocitySkew(reduceMotion) {
   if (reduceMotion) return () => {};
@@ -2628,13 +2539,7 @@ function setupScrollVelocitySkew(reduceMotion) {
 function setupMagneticButtons(reduceMotion) {
   if (reduceMotion) return () => {};
   if (!window.matchMedia("(pointer: fine)").matches) return () => {};
-  const selector = [
-    "#menu-toggle",
-    ".hero-mask-lock",
-    ".ln-contact-icon",
-    ".footer-cta-action",
-    ".menu-shell__close",
-  ].join(", ");
+  const selector = [".hero-mask-lock", ".footer-cta-action"].join(", ");
   const els = Array.from(document.querySelectorAll(selector));
   if (!els.length) return () => {};
 
@@ -2755,16 +2660,424 @@ function setupRevealSafety() {
   };
 }
 
+/**
+ * Fumaça interativa na 1ª página (#hero): revela as linhas onduladas do fundo.
+ * Canvas 2D (sem WebGL) — estável em todos os browsers, não toca na máscara do rosto.
+ *
+ * Camadas:
+ *  - .hero-lines (z0) + .hero-veil (z2): linhas ocultas sob véu claro
+ *  - .hero-smoke-zone (z8): faixa superior — fumaça revela linhas (cursor/toque)
+ *  - .hero-stage (z10): rosto + máscara goo — intocada
+ */
+function setupHeroSmoke(reduceMotion) {
+  const canvas = document.getElementById("hero-smoke");
+  const zone = document.querySelector(".hero-smoke-zone");
+  const hero = document.getElementById("hero");
+  if (!canvas || !zone || !hero || reduceMotion) {
+    if (zone) zone.style.display = "none";
+    return () => {};
+  }
+
+  const ctx = canvas.getContext("2d", { alpha: true });
+  if (!ctx) {
+    zone.style.display = "none";
+    return () => {};
+  }
+
+  const density = document.createElement("canvas");
+  const dCtx = density.getContext("2d", { alpha: true });
+  const densityBlur = document.createElement("canvas");
+  const dbCtx = densityBlur.getContext("2d", { alpha: true });
+  const linesLayer = document.createElement("canvas");
+  const lCtx = linesLayer.getContext("2d", { alpha: true });
+  const linesStatic = document.createElement("canvas");
+  const lsCtx = linesStatic.getContext("2d", { alpha: true });
+  if (!dCtx || !dbCtx || !lCtx || !lsCtx) {
+    zone.style.display = "none";
+    return () => {};
+  }
+
+  let linesImg = null;
+  let linesReady = false;
+  let proceduralFrame = 0;
+  const img = new Image();
+  img.decoding = "async";
+  img.onload = () => {
+    linesImg = img;
+    linesReady = img.naturalWidth > 0 && img.naturalHeight > 0;
+    rebuildLinesStatic(0);
+  };
+  img.onerror = () => {
+    linesReady = false;
+  };
+  img.src = "./assets/svgs/hero-lines.svg";
+
+  let cssW = 1;
+  let cssH = 1;
+  let dpr = 1;
+
+  const applyCanvasSize = (c, w, h, ratio) => {
+    c.width = Math.max(1, Math.round(w * ratio));
+    c.height = Math.max(1, Math.round(h * ratio));
+  };
+
+  const resize = () => {
+    const rect = zone.getBoundingClientRect();
+    cssW = Math.max(1, Math.round(rect.width));
+    cssH = Math.max(1, Math.round(rect.height));
+    dpr = getOptimalCanvasDpr(2, 1.35);
+
+    applyCanvasSize(canvas, cssW, cssH, dpr);
+    applyCanvasSize(density, cssW, cssH, dpr);
+    applyCanvasSize(densityBlur, cssW, cssH, dpr);
+    applyCanvasSize(linesLayer, cssW, cssH, dpr);
+    applyCanvasSize(linesStatic, cssW, cssH, dpr);
+
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dbCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lsCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    rebuildLinesStatic(0);
+  };
+  const rebuildLinesStatic = (t) => {
+    lsCtx.clearRect(0, 0, cssW, cssH);
+    lsCtx.save();
+    lsCtx.filter = "brightness(1.14) contrast(1.06) saturate(0.92)";
+    if (linesReady) drawLinesCover(lsCtx, cssW, cssH);
+    else drawProceduralLines(lsCtx, cssW, cssH, t);
+    lsCtx.restore();
+  };
+
+  let targetX = -9999;
+  let targetY = -9999;
+  let px = -9999;
+  let py = -9999;
+  let ppx = -9999;
+  let ppy = -9999;
+  let stampX = -9999;
+  let stampY = -9999;
+  let inside = false;
+
+  const applyPointer = (clientX, clientY) => {
+    const rect = zone.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    inside = x >= -24 && x <= rect.width + 24 && y >= -24 && y <= rect.height + 24;
+    targetX = x;
+    targetY = y;
+  };
+
+  const onPointerMove = (e) => applyPointer(e.clientX, e.clientY);
+  const onPointerDown = (e) => applyPointer(e.clientX, e.clientY);
+  const onTouch = (e) => {
+    if (e.touches && e.touches.length) {
+      applyPointer(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  window.addEventListener("pointermove", onPointerMove, { passive: true });
+  window.addEventListener("pointerdown", onPointerDown, { passive: true });
+  window.addEventListener("touchstart", onTouch, { passive: true });
+  window.addEventListener("touchmove", onTouch, { passive: true });
+
+  const drawLinesCover = (targetCtx, w, h) => {
+    if (!linesReady || !linesImg) return;
+    const ir = linesImg.naturalWidth / linesImg.naturalHeight;
+    const cr = w / h;
+    let dw;
+    let dh;
+    let dx;
+    let dy;
+    if (cr > ir) {
+      dw = w;
+      dh = w / ir;
+      dx = 0;
+      dy = (h - dh) * 0.2;
+    } else {
+      dh = h;
+      dw = h * ir;
+      dx = (w - dw) * 0.5;
+      dy = 0;
+    }
+    targetCtx.drawImage(linesImg, dx, dy, dw, dh);
+  };
+
+  const drawProceduralLines = (targetCtx, w, h, t) => {
+    targetCtx.save();
+    targetCtx.strokeStyle = "rgba(42, 46, 36, 0.78)";
+    targetCtx.lineWidth = 1.2;
+    targetCtx.lineCap = "round";
+    const rows = 14;
+    for (let i = 0; i < rows; i += 1) {
+      const y = (h / (rows + 1)) * (i + 1) + Math.sin(t * 0.4 + i) * 3;
+      targetCtx.beginPath();
+      for (let x = -40; x <= w + 40; x += 28) {
+        const wave = Math.sin((x + i * 40) * 0.012 + t * 0.25) * 18;
+        if (x <= -40) targetCtx.moveTo(x, y + wave);
+        else targetCtx.lineTo(x, y + wave);
+      }
+      targetCtx.stroke();
+    }
+    targetCtx.restore();
+  };
+
+  resize();
+  rebuildLinesStatic(0);
+
+  const LIQUID = {
+    stampSpacing: 4.5,
+    decay: 0.13,
+    decayOutside: 0.34,
+    brushRadius: 40,
+    ribbonWidth: 50,
+    hazeBlur: 12,
+    satelliteCount: 2,
+    diffuseMix: 0.12,
+  };
+
+  const injectLiquidBlob = (x, y, radius, alpha) => {
+    dCtx.globalCompositeOperation = "source-over";
+    const g = dCtx.createRadialGradient(x, y, 0, x, y, radius);
+    g.addColorStop(0, `rgba(255,255,255,${alpha})`);
+    g.addColorStop(0.22, `rgba(255,255,255,${alpha * 0.78})`);
+    g.addColorStop(0.48, `rgba(255,255,255,${alpha * 0.42})`);
+    g.addColorStop(0.72, `rgba(255,255,255,${alpha * 0.14})`);
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    dCtx.fillStyle = g;
+    dCtx.beginPath();
+    dCtx.arc(x, y, radius, 0, Math.PI * 2);
+    dCtx.fill();
+  };
+
+  const injectLiquidSatellites = (x, y, radius, alpha, phase) => {
+    const orbits = [
+      [Math.cos(phase) * radius * 0.34, Math.sin(phase) * radius * 0.28, 0.58],
+      [Math.cos(phase + 2.1) * radius * 0.42, Math.sin(phase + 1.4) * radius * 0.36, 0.44],
+      [Math.cos(phase - 1.6) * radius * 0.3, Math.sin(phase - 2.3) * radius * 0.32, 0.36],
+    ];
+    orbits.slice(0, LIQUID.satelliteCount).forEach(([ox, oy, scale]) => {
+      injectLiquidBlob(x + ox, y + oy, radius * scale, alpha * 0.62);
+    });
+  };
+
+  const injectSoftRibbon = (x0, y0, x1, y1, width, alpha) => {
+    const dist = Math.hypot(x1 - x0, y1 - y0);
+    if (dist < 0.35) return;
+    dCtx.save();
+    dCtx.globalCompositeOperation = "source-over";
+    dCtx.lineCap = "round";
+    dCtx.lineJoin = "round";
+    dCtx.lineWidth = width;
+    dCtx.shadowColor = `rgba(255,255,255,${alpha * 0.55})`;
+    dCtx.shadowBlur = width * 0.42;
+    const g = dCtx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, `rgba(255,255,255,${alpha * 0.55})`);
+    g.addColorStop(0.5, `rgba(255,255,255,${alpha})`);
+    g.addColorStop(1, `rgba(255,255,255,${alpha * 0.55})`);
+    dCtx.strokeStyle = g;
+    dCtx.beginPath();
+    dCtx.moveTo(x0, y0);
+    dCtx.lineTo(x1, y1);
+    dCtx.stroke();
+    dCtx.restore();
+  };
+
+  const injectLiquidAt = (x, y, speed, phase) => {
+    const r = LIQUID.brushRadius + Math.min(speed * 520, 48);
+    injectLiquidBlob(x, y, r, 0.92);
+    injectLiquidSatellites(x, y, r, 0.72, phase);
+  };
+
+  const stampLiquidPath = (x0, y0, x1, y1, speed, phase) => {
+    const dist = Math.hypot(x1 - x0, y1 - y0);
+    if (dist < 0.01) {
+      injectLiquidAt(x1, y1, speed, phase);
+      return;
+    }
+    injectSoftRibbon(x0, y0, x1, y1, LIQUID.ribbonWidth, 0.72);
+    const steps = Math.max(1, Math.ceil(dist / LIQUID.stampSpacing));
+    for (let i = 0; i <= steps; i += 1) {
+      const t = i / steps;
+      const x = x0 + (x1 - x0) * t;
+      const y = y0 + (y1 - y0) * t;
+      const wobble = Math.sin(t * 14 + phase) * 1.8;
+      injectLiquidAt(x + wobble, y - wobble * 0.7, speed, phase + t * 2.4);
+    }
+  };
+
+  const diffuseDensity = () => {
+    dbCtx.clearRect(0, 0, cssW, cssH);
+    dbCtx.filter = "blur(5px)";
+    dbCtx.drawImage(density, 0, 0, cssW, cssH);
+    dbCtx.filter = "none";
+    dCtx.globalCompositeOperation = "source-over";
+    dCtx.globalAlpha = LIQUID.diffuseMix;
+    dCtx.drawImage(densityBlur, 0, 0, cssW, cssH);
+    dCtx.globalAlpha = 1;
+  };
+
+  let heroVisible = true;
+  let raf = 0;
+  let docHidden = document.hidden;
+  let diffuseFrame = 0;
+  const start = performance.now();
+
+  function stopSmokeFrame() {
+    if (raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+  }
+
+  function ensureSmokeFrame() {
+    if (!raf && heroVisible && !docHidden) raf = requestAnimationFrame(frame);
+  }
+
+  function frame() {
+    raf = 0;
+    if (!heroVisible || docHidden) return;
+
+    const t = (performance.now() - start) * 0.001;
+
+    dCtx.globalCompositeOperation = "destination-out";
+    dCtx.globalAlpha = inside ? LIQUID.decay : LIQUID.decayOutside;
+    dCtx.fillStyle = "#000";
+    dCtx.fillRect(0, 0, cssW, cssH);
+    dCtx.globalAlpha = 1;
+
+    if (inside) {
+      if (stampX < -500) {
+        stampX = targetX;
+        stampY = targetY;
+        px = targetX;
+        py = targetY;
+        ppx = targetX;
+        ppy = targetY;
+      }
+
+      const phase = t * 4.2;
+      const segSpeed = Math.hypot(targetX - stampX, targetY - stampY);
+      stampLiquidPath(stampX, stampY, targetX, targetY, segSpeed, phase);
+      stampX = targetX;
+      stampY = targetY;
+
+      ppx = px;
+      ppy = py;
+      px += (targetX - px) * 0.58;
+      py += (targetY - py) * 0.58;
+      injectLiquidAt(px, py, Math.hypot(px - ppx, py - ppy), phase + 1.7);
+    } else {
+      stampX = -9999;
+      stampY = -9999;
+    }
+
+    diffuseFrame += 1;
+    if (!perfMqMobile.matches || diffuseFrame % 2 === 0) diffuseDensity();
+
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = "rgba(158, 162, 146, 0.5)";
+    ctx.filter = `blur(${LIQUID.hazeBlur}px)`;
+    ctx.drawImage(density, 0, 0, cssW, cssH);
+    ctx.restore();
+
+    if (!linesReady) {
+      proceduralFrame += 1;
+      if (proceduralFrame % 2 === 0) rebuildLinesStatic(t);
+    }
+
+    lCtx.clearRect(0, 0, cssW, cssH);
+    lCtx.drawImage(linesStatic, 0, 0, cssW, cssH);
+    lCtx.globalCompositeOperation = "destination-in";
+    lCtx.drawImage(density, 0, 0, cssW, cssH);
+    lCtx.globalCompositeOperation = "source-over";
+
+    ctx.save();
+    ctx.filter = "brightness(1.1) contrast(1.04)";
+    ctx.globalAlpha = 0.94;
+    ctx.drawImage(linesLayer, 0, 0, cssW, cssH);
+    ctx.restore();
+
+    ensureSmokeFrame();
+  }
+
+  let io = null;
+  if (typeof IntersectionObserver === "function") {
+    io = new IntersectionObserver(
+      (entries) => {
+        heroVisible = entries.some((en) => en.isIntersecting);
+        if (heroVisible) ensureSmokeFrame();
+        else stopSmokeFrame();
+      },
+      { threshold: 0, rootMargin: "80px 0px" },
+    );
+    io.observe(hero);
+  }
+
+  const unbindSmokeDocHidden = bindDocHidden((hidden) => {
+    docHidden = hidden;
+    if (hidden) stopSmokeFrame();
+    else ensureSmokeFrame();
+  });
+
+  let ro = null;
+  if (typeof ResizeObserver === "function") {
+    let roRaf = 0;
+    ro = new ResizeObserver(() => {
+      if (roRaf) return;
+      roRaf = requestAnimationFrame(() => {
+        roRaf = 0;
+        resize();
+      });
+    });
+    ro.observe(zone);
+    ro.observe(hero);
+  } else {
+    window.addEventListener("resize", resize);
+  }
+
+  ensureSmokeFrame();
+
+  return () => {
+    stopSmokeFrame();
+    unbindSmokeDocHidden();
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerdown", onPointerDown);
+    window.removeEventListener("touchstart", onTouch);
+    window.removeEventListener("touchmove", onTouch);
+    if (io) io.disconnect();
+    if (ro) ro.disconnect();
+    else window.removeEventListener("resize", resize);
+  };
+}
+
 function main() {
   const reduceMotion = prefersReducedMotion();
   const disposers = [];
-  const depthState = { scrollDepth: 0, sectionMix: 0 };
+
+  if (!reduceMotion && typeof ScrollTrigger !== "undefined") {
+    ScrollTrigger.config({
+      limitCallbacks: true,
+      ignoreMobileResize: true,
+    });
+  }
+  if (!reduceMotion && typeof gsap !== "undefined") {
+    gsap.ticker.lagSmoothing(500, 33);
+  }
+
   const ctx = gsap.context(() => {
     disposers.push(setupMenu(reduceMotion));
     disposers.push(setupHeroBlobMask(reduceMotion));
+    disposers.push(setupHeroLinesParallax(reduceMotion));
     disposers.push(setupPerspectiveHoverCards(reduceMotion));
     disposers.push(setupPageIntroOutro(reduceMotion));
-    disposers.push(setupScrollProgress(reduceMotion, depthState));
+    disposers.push(setupScrollProgress(reduceMotion));
     disposers.push(setupSectionScrollRails(reduceMotion));
     disposers.push(setupLayeredParallax(reduceMotion));
     disposers.push(setupStackPin(reduceMotion));
@@ -2774,21 +3087,17 @@ function main() {
     setupScrollHighlights(reduceMotion);
     const projectDisposer = setupProjectCards(reduceMotion);
     if (typeof projectDisposer === "function") disposers.push(projectDisposer);
-    const projectFxDisposer = setupProjectCardFx(reduceMotion);
-    if (typeof projectFxDisposer === "function") disposers.push(projectFxDisposer);
     disposers.push(setupScrollVelocitySkew(reduceMotion));
     disposers.push(setupContatoOverlay(reduceMotion));
     disposers.push(setupContatoLandoReplica(reduceMotion));
-    disposers.push(setupStackGradientBars(reduceMotion));
     disposers.push(setupPartnersMarquee(reduceMotion));
     disposers.push(setupTrajetoriaExpansion(reduceMotion));
     const labSection = document.getElementById("lab");
     if (labSection && !labSection.hasAttribute("hidden")) {
       disposers.push(setupHelmets(reduceMotion));
     }
-    disposers.push(initThreeBg(reduceMotion, depthState));
+    disposers.push(setupHeroSmoke(reduceMotion));
     disposers.push(setupFxLayers(reduceMotion));
-    disposers.push(setupCustomCursor(reduceMotion));
     disposers.push(setupMagneticButtons(reduceMotion));
     disposers.push(setupImmersiveParallax(reduceMotion));
     disposers.push(setupRevealSafety());
