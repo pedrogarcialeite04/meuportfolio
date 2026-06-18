@@ -1,0 +1,95 @@
+:root {
+  --black: #0c0c0c;
+  --musgo: #282c20;
+  --white: #fff;
+  --beige: #b9bbad;
+  --default: #d2ff00;
+  --ease-out-expo: cubic-bezier(0.23, 0.98, 0.35, 0.99);
+  --hero-reveal-top: 90px;
+  --hero-reveal-left: 50%;
+  --hero-reveal-width: 345px;
+  --hero-reveal-height: 345px;
+  --scroll: 0;
+  --surface: #101210;
+  --surface-2: #161816;
+  --border-soft: #242824;
+}
+
+::selection {
+  background: var(--default);
+  color: #000;
+}
+
+@font-face {
+  font-family: Brier;
+  src: url("../../assets/fonts/brier-bold.otf");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: BungeeCustom;
+  src: url("../../assets/fonts/bungee-regular.ttf");
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* overflow-x sÃ³ no html: no body, evita segundo eixo de scroll (regra CSS overflow). */
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  background: var(--black);
+  color: var(--white);
+  font-family: "Mona Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+main {
+  position: relative;
+  z-index: 2;
+}
+
+/* SecÃ§Ãµes abaixo do fold: browser adia layout/pintura atÃ© aproximar do viewport. */
+.section-trajetoria,
+.section-projetos,
+.section-contato-overlay {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
+}

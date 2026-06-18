@@ -1,0 +1,10 @@
+/* Highlights animados (faixa que varre no scroll) */
+.animate-highlight {
+  position: absolute;
+  inset: 0;
+  background: var(--default);
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+  z-index: -1;
+}

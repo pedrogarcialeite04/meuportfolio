@@ -1,0 +1,246 @@
+/* TÃ­tulo da seÃ§Ã£o TrajetÃ³ria menor para caber melhor em telas mÃ©dias/pequenas */
+.section-trajetoria .trajetoria-title {
+  font-size: clamp(2.1rem, 8.8vw, 6.2rem);
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+}
+
+.section-trajetoria .folio-eyebrow,
+.section-trajetoria .trajetoria-title {
+  position: relative;
+  z-index: 8;
+  padding-inline: clamp(16px, 3.2vw, 34px);
+  text-shadow: none;
+}
+
+.section-trajetoria .trajetoria-title > span:last-of-type {
+  color: #1c2117;
+}
+
+.section-trajetoria .section-scroll-rail {
+  display: none;
+}
+
+/* TrajetÃ³ria â€” Hero editorial inspirada em layout de campanha. */
+.trajetoria-expansion {
+  position: relative;
+  margin-top: 0;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  min-height: clamp(620px, 82vh, 820px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(72px, 8vw, 108px) clamp(16px, 3vw, 40px) clamp(42px, 5vw, 72px);
+  overflow: hidden;
+  background: #e7e6df;
+  isolation: isolate;
+}
+
+.trajetoria-expansion::before,
+.trajetoria-expansion::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: transparent;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.trajetoria-expansion::before {
+  top: 0;
+}
+
+.trajetoria-expansion::after {
+  bottom: 0;
+}
+
+.trajetoria-expansion__bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 38%;
+  z-index: 0;
+  pointer-events: none;
+  filter: grayscale(0.06) contrast(1.02) brightness(1.02);
+  transform: scale(1.01);
+}
+
+.trajetoria-expansion__wash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(237, 236, 230, 0.56) 0%, rgba(237, 236, 230, 0.26) 44%, rgba(237, 236, 230, 0.62) 100%),
+    linear-gradient(90deg, rgba(232, 230, 222, 0.66) 0%, rgba(232, 230, 222, 0.22) 52%, rgba(232, 230, 222, 0.58) 100%);
+}
+
+.trajetoria-expansion__contour {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 85% 50%, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0) 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180' viewBox='0 0 320 180'%3E%3Cpath d='M14 120C70 90 128 150 182 120C236 90 272 130 306 116' stroke='rgba(25,28,22,0.14)' fill='none'/%3E%3Cpath d='M0 42C62 12 118 58 176 36C234 14 266 58 320 30' stroke='rgba(25,28,22,0.1)' fill='none'/%3E%3C/svg%3E");
+  background-size: cover, 380px 214px;
+}
+
+.trajetoria-expansion__inner {
+  position: relative;
+  z-index: 4;
+  width: min(900px, 100%);
+  display: flex;
+  justify-content: center;
+}
+
+.trajetoria-single-story {
+  position: relative;
+  width: min(660px, 100%);
+  padding: clamp(20px, 2.5vw, 30px) clamp(16px, 2.2vw, 26px) clamp(20px, 2.3vw, 28px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.22) 44%, rgba(255, 255, 255, 0.12)),
+    linear-gradient(110deg, rgba(232, 235, 228, 0.2), rgba(232, 235, 228, 0.08)),
+    rgba(232, 231, 224, 0.16);
+  color: #1a1f16;
+  text-align: center;
+  backdrop-filter: blur(18px) saturate(1.22);
+  -webkit-backdrop-filter: blur(18px) saturate(1.22);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.trajetoria-single-story::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.08) 48%, rgba(110, 122, 86, 0.18));
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.trajetoria-single-story::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  right: 10%;
+  height: 34%;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 72%);
+  pointer-events: none;
+  opacity: 0.62;
+}
+
+.trajetoria-single-story__kicker {
+  margin: 0 0 12px;
+  color: #4a5640;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 900;
+  text-shadow: none;
+}
+
+.trajetoria-single-story__title {
+  margin: 0;
+  color: #131810;
+  font-size: clamp(1.6rem, 3.4vw, 2.7rem);
+  line-height: 0.9;
+  text-transform: none;
+  letter-spacing: -0.03em;
+  font-weight: 900;
+  text-wrap: balance;
+  text-shadow: none;
+}
+
+.trajetoria-single-story__text {
+  margin: 18px auto 0;
+  color: #222a1d;
+  font-size: clamp(0.92rem, 1.05vw, 1rem);
+  line-height: 1.66;
+  max-width: 52ch;
+  text-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .section-trajetoria.dark {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .trajetoria-expansion {
+    margin-top: 0;
+    min-height: clamp(520px, 74vh, 660px);
+    padding: clamp(64px, 8vw, 96px) 14px clamp(28px, 4vw, 48px);
+  }
+
+  .section-trajetoria .folio-eyebrow,
+  .section-trajetoria .trajetoria-title {
+    padding-inline: 14px;
+  }
+
+  .trajetoria-expansion__inner {
+    width: 100%;
+  }
+
+  .trajetoria-single-story {
+    border-radius: 14px;
+    padding: 16px 14px 18px;
+  }
+}
+
+.section-scroll-rail {
+  position: absolute;
+  left: 10px;
+  top: 110px;
+  bottom: 90px;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 99px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.section-scroll-rail--right {
+  left: auto;
+  right: 10px;
+}
+
+.section-scroll-rail__fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, var(--default), #9eb300);
+  transform-origin: top center;
+  transform: scaleY(0);
+  border-radius: inherit;
+}
+
+@media (max-width: 768px) {
+  .section-scroll-rail {
+    top: 88px;
+    bottom: 56px;
+    width: 2px;
+    right: 6px;
+    left: auto;
+    opacity: 0.85;
+  }
+}

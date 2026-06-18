@@ -1,0 +1,578 @@
+/* Sobrescreve a utility .dark apenas na seÃ§Ã£o de contato */
+.section.section-contato-overlay.dark {
+  background: #06070a;
+}
+
+.section-contato-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("../../assets/images/planodefundoproj.jfif");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.section-contato-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(4, 6, 8, 0.5) 0%, rgba(4, 6, 8, 0.74) 48%, rgba(4, 6, 8, 0.9) 100%),
+    radial-gradient(90% 70% at 50% 45%, rgba(210, 255, 0, 0.08) 0%, transparent 60%);
+}
+
+.section-contato-overlay > * {
+  position: relative;
+  z-index: 2;
+}
+
+.contato-overlay-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1180px, calc(100% - 2 * var(--section-pad)));
+  margin-inline: auto;
+  display: grid;
+  gap: clamp(10px, 1.8vw, 20px);
+}
+
+.contato-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  font-weight: 820;
+  color: #c2cf9e;
+}
+
+.contato-title {
+  font-size: clamp(2.2rem, 7.2vw, 6.8rem);
+  line-height: 0.86;
+}
+
+.contato-lead {
+  max-width: min(68ch, 100%);
+  margin: 0;
+  font-size: clamp(1rem, 1.45vw, 1.2rem);
+  line-height: 1.62;
+  color: #d5dbcb;
+}
+
+.contato-cta-row {
+  margin-top: clamp(4px, 1vw, 12px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.contato-showcase {
+  margin-top: clamp(10px, 2vw, 18px);
+  min-height: clamp(260px, 38vw, 430px);
+  border-radius: 0;
+  border: 1px solid rgba(210, 255, 0, 0.22);
+  background: #050705;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 22px 52px rgba(0, 0, 0, 0.5);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 1.25fr) minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr auto;
+  align-items: stretch;
+  gap: clamp(8px, 1.2vw, 16px);
+  padding: clamp(14px, 2vw, 22px) clamp(14px, 2.2vw, 28px) 0;
+  overflow: hidden;
+  position: relative;
+  clip-path: polygon(0 7%, 39% 7%, 43.5% 0, 56.5% 0, 61% 7%, 100% 7%, 100% 100%, 0 100%);
+}
+
+.contato-showcase::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 95% at 50% 100%, rgba(210, 255, 0, 0.38) 0%, rgba(210, 255, 0, 0.08) 38%, transparent 68%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.022) 0, rgba(255, 255, 255, 0.022) 1px, transparent 1px, transparent 38px);
+  opacity: 0.46;
+  pointer-events: none;
+}
+
+.contato-showcase-top {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: stretch;
+  width: calc(100% + clamp(28px, 4.4vw, 56px));
+  height: clamp(18px, 2.2vw, 28px);
+  margin-top: calc(clamp(14px, 2vw, 22px) * -1);
+  margin-left: calc(clamp(14px, 2.2vw, 28px) * -1);
+  background: #d2ff00;
+  border-bottom: 1px solid rgba(5, 9, 3, 0.26);
+  box-shadow: 0 9px 16px rgba(0, 0, 0, 0.32);
+  z-index: 4;
+}
+
+.contato-showcase-headline {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 0.98;
+  font-size: clamp(1.35rem, 2.8vw, 2.7rem);
+  font-weight: 900;
+  color: #f7f8f4;
+  text-wrap: balance;
+  z-index: 2;
+}
+
+.contato-showcase-headline span {
+  color: #d2ff00;
+}
+
+.contato-showcase-script {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0;
+  justify-self: center;
+  align-self: start;
+  transform: translateY(-38%) rotate(-8deg);
+  font-family: "Brier", serif;
+  font-size: clamp(1.3rem, 2vw, 2rem);
+  color: #d2ff00;
+  opacity: 0.9;
+  z-index: 4;
+}
+
+.contato-showcase-image-wrap {
+  margin: 0;
+  grid-column: 2;
+  grid-row: 3;
+  align-self: end;
+  justify-self: center;
+  width: min(100%, 420px);
+  z-index: 2;
+}
+
+.contato-showcase-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 38px rgba(0, 0, 0, 0.52));
+}
+
+.contato-showcase-text {
+  margin: 0;
+  align-self: end;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: clamp(0.55rem, 0.72vw, 0.74rem);
+  line-height: 1.45;
+  font-weight: 820;
+  color: #e7ecda;
+  z-index: 2;
+}
+
+.contato-showcase-text--left {
+  grid-column: 1;
+  grid-row: 3;
+  text-align: left;
+  padding-left: clamp(4px, 0.8vw, 10px);
+  padding-bottom: clamp(36px, 5vw, 64px);
+}
+
+.contato-showcase-text--right {
+  grid-column: 3;
+  grid-row: 3;
+  text-align: right;
+  padding-right: clamp(4px, 0.8vw, 10px);
+  padding-bottom: clamp(36px, 5vw, 64px);
+}
+
+.contato-showcase-footer {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 1.8vw, 26px);
+  padding: 8px clamp(10px, 1.4vw, 18px) 8px;
+  border-top: 1px solid rgba(5, 9, 3, 0.25);
+  background: #d2ff00;
+  z-index: 2;
+  flex-wrap: wrap;
+}
+
+.contato-showcase-footer span {
+  text-transform: uppercase;
+  font-size: clamp(0.48rem, 0.58vw, 0.62rem);
+  letter-spacing: 0.08em;
+  color: #161d10;
+  font-weight: 860;
+}
+
+.contato-mail,
+.contato-linkedin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 780;
+  border-radius: 999px;
+  transition: transform 0.22s var(--ease-out-expo), border-color 0.22s ease, background-color 0.22s ease, color 0.22s ease;
+}
+
+.contato-mail {
+  padding: 10px 16px;
+  color: #10140c;
+  background: var(--default);
+  border: 1px solid transparent;
+}
+
+.contato-linkedin {
+  padding: 10px 16px;
+  color: #e9eede;
+  border: 1px solid rgba(210, 255, 0, 0.4);
+  background: rgba(210, 255, 0, 0.08);
+}
+
+.contato-mail:hover,
+.contato-mail:focus-visible,
+.contato-linkedin:hover,
+.contato-linkedin:focus-visible {
+  transform: translateY(-2px);
+}
+
+.contato-mail:focus-visible,
+.contato-linkedin:focus-visible {
+  outline: 2px solid var(--default);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.section-contato-overlay {
+  max-width: none;
+  border-top: 0;
+}
+
+.ln-footer-root {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.ln-footer-shell {
+  position: relative;
+  width: min(94%, 1620px);
+  margin: 0 auto;
+  min-height: clamp(520px, 58vw, 840px);
+  background: linear-gradient(180deg, rgba(10, 12, 12, 0.78), rgba(10, 12, 12, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 80px rgba(0, 0, 0, 0.36);
+  /* A mask-image anterior (image-bg.svg) era interpretada como luminance e, por
+     ter preenchimento escuro, escondia todo o conteÃºdo do contato. Removida:
+     o border-radius + overflow:hidden jÃ¡ entregam o recorte de card. */
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.ln-footer-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.52;
+  background-image: url("../../assets/svgs/ln-pattern.svg");
+  background-size: 100% auto;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.ln-footer-hero {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 2;
+}
+
+.ln-footer-signature {
+  position: absolute;
+  top: clamp(68px, 9vw, 120px);
+  transform: rotate(-12deg) translateY(22px);
+  color: #d2ff00;
+  width: clamp(210px, 16vw, 250px);
+}
+
+.ln-footer-signature svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ln-footer-headline {
+  margin: clamp(94px, 12vw, 140px) 0 0;
+  text-align: center;
+  text-transform: uppercase;
+  color: #fff;
+  font-size: clamp(2.1rem, 5vw, 5.6rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.ln-footer-headline span {
+  font-family: Brier, serif;
+  color: #d2ff00;
+  font-weight: 400;
+}
+
+@media (max-width: 900px) {
+  .ln-footer-shell {
+    width: min(96%, 1200px);
+    min-height: clamp(500px, 88vw, 760px);
+  }
+
+  .ln-footer-pattern {
+    background-size: cover;
+  }
+}
+
+.ln-footer-image-wrap {
+  margin: 0;
+  width: min(100%, 620px);
+}
+
+.ln-footer-image {
+  width: 100%;
+  height: clamp(220px, 36vw, 500px);
+  object-fit: cover;
+  filter: brightness(0.75) drop-shadow(0 24px 36px rgba(0, 0, 0, 0.5));
+}
+
+.ln-footer-links {
+  position: absolute;
+  top: 60%;
+  transform: translateY(-60%);
+  z-index: 4;
+}
+
+.ln-footer-links--left {
+  left: clamp(16px, 5vw, 10%);
+}
+
+.ln-footer-links--right {
+  right: clamp(16px, 5vw, 10%);
+}
+
+.ln-footer-links--contacts-only {
+  left: auto;
+  right: clamp(14px, 6vw, 90px);
+  top: 58%;
+  transform: translateY(-58%);
+}
+
+.ln-footer-links--contacts-only .ln-links-label {
+  text-align: center;
+}
+
+.ln-links-label {
+  margin: 0 0 12px;
+  text-align: center;
+  color: #fff;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.ln-footer-links ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ln-footer-links .menu-item {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: clamp(1.3rem, 2.6vw, 3.6rem);
+  font-weight: 900;
+  line-height: 0.94;
+  letter-spacing: -0.03em;
+}
+
+.ln-footer-links .menu-link {
+  position: relative;
+  display: block;
+  text-decoration: none;
+  color: #fff;
+  padding: 1px 0;
+  transition: color 0.22s ease;
+}
+
+.ln-footer-links .menu-text {
+  position: relative;
+  z-index: 2;
+  display: block;
+  transition: transform 0.36s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+
+.ln-footer-links .menu-text--accent {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  color: #d2ff00;
+}
+
+.ln-footer-links .menu-bg {
+  position: absolute;
+  inset: 0;
+  background: #d2ff00;
+  transform: translateX(-101%);
+  z-index: 1;
+}
+
+.ln-footer-links .menu-link:hover .menu-text,
+.ln-footer-links .menu-link:focus-visible .menu-text,
+.ln-footer-links .menu-link.is-active .menu-text {
+  transform: translateY(-100%);
+}
+
+.ln-footer-links .menu-link:focus-visible {
+  outline: 2px solid #d2ff00;
+  outline-offset: 4px;
+}
+
+.ln-contact-icons {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.ln-contact-icons .menu-item {
+  overflow: visible;
+  font-size: 0;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ln-footer-links .ln-contact-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(7, 9, 6, 0.52);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  transition:
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    color 0.22s ease;
+}
+
+.ln-footer-links .ln-contact-icon svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
+.ln-footer-links .ln-contact-icon__img {
+  width: 26px;
+  height: 26px;
+  display: block;
+  object-fit: contain;
+}
+
+.ln-footer-links .ln-contact-icon:hover,
+.ln-footer-links .ln-contact-icon:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(210, 255, 0, 0.75);
+  background: rgba(210, 255, 0, 0.12);
+  color: #d2ff00;
+}
+
+.ln-footer-marquee-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(24px, 4.4vw, 64px);
+  overflow: hidden;
+  z-index: 4;
+}
+
+.ln-footer-marquee {
+  display: flex;
+  width: max-content;
+}
+
+.ln-footer-marquee-content {
+  display: flex;
+  align-items: center;
+  gap: clamp(30px, 3vw, 54px);
+  padding-right: 80px;
+}
+
+.ln-footer-marquee-content span {
+  color: #d2ff00;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: clamp(0.64rem, 0.9vw, 1rem);
+  white-space: nowrap;
+}
+
+.ln-footer-legal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  color: #111;
+  padding: 10px 4px 0;
+  text-transform: uppercase;
+}
+
+.ln-footer-copyright {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(210, 255, 0, 0.58);
+}
+
+.ln-footer-legal-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}

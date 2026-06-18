@@ -1,0 +1,17 @@
+@import url("./base/variaveis-reset.css");
+@import url("./layout/painel-stack.css");
+@import url("./componentes/cabecalho.css");
+@import url("./componentes/menu.css");
+@import url("./secoes/hero.css");
+@import url("./secoes/sobre.css");
+@import url("./secoes/stack.css");
+@import url("./secoes/projetos-secao.css");
+@import url("./secoes/contato.css");
+@import url("./secoes/projetos-cards.css");
+@import url("./secoes/trajetoria.css");
+@import url("./componentes/rodape.css");
+@import url("./componentes/destaques.css");
+@import url("./base/secoes-compartilhadas.css");
+@import url("./componentes/marquee.css");
+@import url("./secoes/laboratorio.css");
+@import url("./efeitos/efeitos-visuais.css");

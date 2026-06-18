@@ -1,0 +1,151 @@
+/* ============================================================
+   FX SURREAIS â€” camada aditiva (cursor, grÃ£o, orbs, progresso,
+   cards de projeto premium). Tudo ativado por classes via JS e
+   neutralizado em prefers-reduced-motion / pointer coarse.
+   ============================================================ */
+
+@property --pcfx-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* â€”â€” Barra de progresso de scroll (topo) â€”â€” */
+.fx-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 1600;
+  transform: scaleX(var(--scroll, 0));
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgba(210, 255, 0, 0) 0%, var(--default) 40%, #f4ffb0 70%, var(--default) 100%);
+  box-shadow: 0 0 18px rgba(210, 255, 0, 0.55);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* â€”â€” GrÃ£o de filme animado (overlay sutil) â€”â€” */
+.fx-grain {
+  position: fixed;
+  inset: -120% -120%;
+  z-index: 1200;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: fxGrainShift 0.9s steps(4) infinite;
+  will-change: transform;
+}
+
+@keyframes fxGrainShift {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-6%, 4%); }
+  50% { transform: translate(4%, -6%); }
+  75% { transform: translate(-4%, -4%); }
+  100% { transform: translate(6%, 4%); }
+}
+
+/* â€”â€” Orbs de gradiente flutuantes (fundo surreal) â€”â€” */
+.fx-orbs {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fx-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.4;
+  will-change: transform;
+  mix-blend-mode: screen;
+}
+
+.fx-orb--1 {
+  width: 46vmax;
+  height: 46vmax;
+  left: -14vmax;
+  top: -10vmax;
+  background: radial-gradient(circle at 50% 50%, rgba(210, 255, 0, 0.5), rgba(210, 255, 0, 0) 68%);
+  animation: fxOrbDrift1 26s ease-in-out infinite;
+}
+
+.fx-orb--2 {
+  width: 40vmax;
+  height: 40vmax;
+  right: -12vmax;
+  top: 26vh;
+  background: radial-gradient(circle at 50% 50%, rgba(120, 200, 255, 0.32), rgba(120, 200, 255, 0) 70%);
+  animation: fxOrbDrift2 32s ease-in-out infinite;
+}
+
+.fx-orb--3 {
+  width: 36vmax;
+  height: 36vmax;
+  left: 30vw;
+  bottom: -16vmax;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 120, 210, 0.26), rgba(255, 120, 210, 0) 70%);
+  animation: fxOrbDrift3 38s ease-in-out infinite;
+}
+
+@keyframes fxOrbDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8vmax, 6vmax) scale(1.14); }
+}
+
+@keyframes fxOrbDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1.05); }
+  50% { transform: translate(-7vmax, -5vmax) scale(0.9); }
+}
+
+@keyframes fxOrbDrift3 {
+  0%, 100% { transform: translate(0, 0) scale(0.95); }
+  50% { transform: translate(-6vmax, -8vmax) scale(1.2); }
+}
+
+/* â€”â€” Grade de projetos â€”â€” */
+.project-showcase-grid {
+  transform: skewY(var(--grid-skew, 0deg));
+  transition: transform 0.2s ease-out;
+}
+
+/* â€”â€” BotÃµes magnÃ©ticos â€”â€” */
+.fx-magnetic {
+  will-change: transform;
+}
+
+/* â€”â€” DesativaÃ§Ãµes de seguranÃ§a â€”â€” */
+@media (hover: none), (pointer: coarse) {
+  /* Performance mobile: sem blur pesado nem grÃ£o animado */
+  .fx-orbs,
+  .fx-grain {
+    display: none !important;
+  }
+
+  .project-showcase-grid {
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-grain,
+  .fx-orb {
+    animation: none;
+  }
+
+  .fx-orbs {
+    display: none;
+  }
+
+  .project-showcase-grid {
+    transform: none !important;
+  }
+
+  .fx-scroll-progress {
+    transition: none;
+  }
+}

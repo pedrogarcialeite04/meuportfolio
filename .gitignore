@@ -17,8 +17,6 @@ build/
 .cache/
 
 # Local folders not used by this static site entrypoint
-css/
-js/
 lando-norris/
 
 # Local-only assets not used by current production page
